@@ -16,7 +16,9 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
 ```
 # **1. Table of Contents**
 |
-| This document presents a non-exhaustive list of feature importance metrics for predictors with numeric responses using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>.    
+| This document presents a non-exhaustive list of feature importance metrics for predictors with numeric responses using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>.
+|
+| Model-independent feature importance determines the degree of relationship, usefulness and contribution of the independent variables (features) with respect to the dependent variables (target responses). Analyzing the importance metrics of features allow the discovery and inclusion of only relevant features, reducing the number of meaningful variables in the model thereby providing insights into the data, speeding up the processing time, boosting its predictive performance and improving the interpretability of the results. The algorithms applied in this study (mostly contained in the <mark style="background-color: #CCECFF">**caret**</mark> package, <mark style="background-color: #CCECFF">**stats**</mark> package, <mark style="background-color: #CCECFF">**minerva**</mark> package and <mark style="background-color: #CCECFF">**CORElearn**</mark> packages) attempt to assign scores to input features based on their relevance at discriminating or predicting the target variable.
 |
 ##  1.1 Sample Data
 |
