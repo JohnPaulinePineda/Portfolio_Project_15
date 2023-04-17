@@ -1204,6 +1204,8 @@ dotplot(Predictor ~ SRCC | Metric,
 
 ###  1.5.4 Maximal Information Coefficient (MIC)
 |
+| [Maximal Information Coefficient](https://www.science.org/doi/10.1126/science.1205438) is a an information theory-based measure of two-variable dependence through the computation of the mutual information normalized by the minimum joint entropy. It evaluates the strength of linear or non-linear association using binning as a means to apply mutual information between continuous random variables and selecting the maximum over many possible grids. The presence of high coefficient values indicate the univariate association between the numeric predictors and the numeric response.
+|
 | **[A]** The maximal information coefficient was obtained using the <mark style="background-color: #CCECFF">**minerva**</mark> package. High raw values of the metric indicate that the numeric predictors were associated with the numeric response.
 |
 | **[B]** The numeric predictors which demonstrated the best feature importance in terms of this metric are as follows:
@@ -1536,6 +1538,7 @@ xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
 | **[Publication]** [Robust Locally Weighted Regression and Smoothing Scatterplots](https://www.tandfonline.com/doi/abs/10.1080/01621459.1979.10481038) by William Cleveland (Journal of the American Statistical Association)
 | **[Publication]** [Mathematical Contributions to the Theory of Evolution: Regression, Heredity and Panmixia](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) by Karl Pearson (Royal Society)
 | **[Publication]** [The Proof and Measurement of Association between Two Things](https://www.jstor.org/stable/1412159?origin=crossref) by Charles Spearman (The American Journal of Psychology)
+| **[Publication]** [Detecting Novel Associations in Large Data Sets](https://www.science.org/doi/10.1126/science.1205438) by David Reshef, Yakir Reshef, Hilary Finucane, Sharon Grossman, Gilean Mcvean, Peter Turnbaugh, Eric Lander, Michael Mitzenmacher and Pardis Sabeti (Science)
 | **[Publication]** [First (?) Occurrence of Common Terms in Probability and Statistics-A Second List, with Corrections](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) by H David (The American Statistician)
 | **[Course]** [Applied Data Mining and Statistical Learning](https://online.stat.psu.edu/stat508/) by Penn State Eberly College of Science
 | **[Course]** [Regression Methods](https://online.stat.psu.edu/stat501/) by Penn State Eberly College of Science
