@@ -1204,7 +1204,7 @@ dotplot(Predictor ~ SRCC | Metric,
 
 ###  1.5.4 Maximal Information Coefficient (MIC)
 |
-| [Maximal Information Coefficient](https://www.science.org/doi/10.1126/science.1205438) is a an information theory-based measure of two-variable dependence through the computation of the mutual information normalized by the minimum joint entropy. It evaluates the strength of linear or non-linear association using binning as a means to apply mutual information between continuous random variables and selecting the maximum over many possible grids. The presence of high coefficient values indicate the univariate association between the numeric predictors and the numeric response.
+| [Maximal Information Coefficient](https://www.science.org/doi/10.1126/science.1205438) is an information theory-based measure of two-variable dependence through the computation of the mutual information normalized by the minimum joint entropy. It evaluates the strength of linear or non-linear association using binning as a means to apply mutual information between continuous random variables and selecting the maximum over many possible grids. The presence of high coefficient values indicate the univariate association between the numeric predictors and the numeric response.
 |
 | **[A]** The maximal information coefficient was obtained using the <mark style="background-color: #CCECFF">**minerva**</mark> package. High raw values of the metric indicate that the numeric predictors were associated with the numeric response.
 |
@@ -1250,6 +1250,8 @@ dotplot(Predictor ~ MIC | Metric,
 ```
 
 ###  1.5.5 Relief Values (RV)
+|
+| [Relief Values](https://link.springer.com/article/10.1023/A:1025667309714) are heuristic measures which estimate the quality of variables according to how well their values compare to instances that are near to each other, but are efficient in detecting contextual information even with strong dependencies between attributes. Random instances and the corresponding K-nearest instances are selected, with the the weights for the different prediction values, different attributes and different prediction consolidated. The rank of the instance in a sequence of instances ordered by the distance is taken into account based on a a user-defined parameter controlling the influence of the distance. The contributions of each K-nearest instances are normalized by dividing the results with the sum of all K contributions.
 |
 | **[A]** The relief values statistic was obtained using the <mark style="background-color: #CCECFF">**CORElearn**</mark> package. High raw values of the metric indicate that the numeric predictors were associated with the numeric response.
 |
@@ -1539,6 +1541,7 @@ xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
 | **[Publication]** [Mathematical Contributions to the Theory of Evolution: Regression, Heredity and Panmixia](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) by Karl Pearson (Royal Society)
 | **[Publication]** [The Proof and Measurement of Association between Two Things](https://www.jstor.org/stable/1412159?origin=crossref) by Charles Spearman (The American Journal of Psychology)
 | **[Publication]** [Detecting Novel Associations in Large Data Sets](https://www.science.org/doi/10.1126/science.1205438) by David Reshef, Yakir Reshef, Hilary Finucane, Sharon Grossman, Gilean Mcvean, Peter Turnbaugh, Eric Lander, Michael Mitzenmacher and Pardis Sabeti (Science)
+| **[Publication]** [Theoretical and Empirical Analysis of ReliefF and RReliefF](https://link.springer.com/article/10.1023/A:1025667309714) by Marko Robnik-Šikonja and Igor Kononenko (Machine Learning)
 | **[Publication]** [First (?) Occurrence of Common Terms in Probability and Statistics-A Second List, with Corrections](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) by H David (The American Statistician)
 | **[Course]** [Applied Data Mining and Statistical Learning](https://online.stat.psu.edu/stat508/) by Penn State Eberly College of Science
 | **[Course]** [Regression Methods](https://online.stat.psu.edu/stat501/) by Penn State Eberly College of Science
