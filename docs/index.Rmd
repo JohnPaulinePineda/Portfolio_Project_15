@@ -1251,7 +1251,7 @@ dotplot(Predictor ~ MIC | Metric,
 
 ###  1.5.5 Relief Values (RV)
 |
-| [Relief Values](https://link.springer.com/article/10.1023/A:1025667309714) are heuristic measures which estimate the quality of variables according to how well their values compare to instances that are near to each other, but are efficient in detecting contextual information even with strong dependencies between attributes. Random instances and the corresponding K-nearest instances are selected, with the the weights for the different prediction values, different attributes and different prediction consolidated. The rank of the instance in a sequence of instances ordered by the distance is taken into account based on a a user-defined parameter controlling the influence of the distance. The contributions of each K-nearest instances are normalized by dividing the results with the sum of all K contributions.
+| [Relief Values](https://link.springer.com/article/10.1023/A:1025667309714) are heuristic measures which estimate the quality of variables according to how well their values compare to instances that are near to each other, but are efficient in detecting contextual information even with strong dependencies between attributes. Random instances and the corresponding K-nearest instances are selected, with the the weights for the different prediction values, different attributes and different prediction consolidated. The rank of the instance in a sequence of instances ordered by the distance is taken into account based on a a user-defined parameter controlling the influence of the distance. The contributions of each K-nearest instances are normalized by dividing the results with the sum of all K contributions. The presence of high relief values indicate the univariate association between the numeric predictors and the numeric response.
 |
 | **[A]** The relief values statistic was obtained using the <mark style="background-color: #CCECFF">**CORElearn**</mark> package. High raw values of the metric indicate that the numeric predictors were associated with the numeric response.
 |
@@ -1299,7 +1299,7 @@ dotplot(Predictor ~ RV | Metric,
 
 ###  1.5.6 Volcano Plot - T-Test (VP_T)
 |
-| [T-Test P-Values](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) define the probability of obtaining an effect during hypothesis testing, at least as large as the one actually observed in the sample data, specifically assuming that the null hypothesis is true. The test of hypothesis involved applying T-Test to evaluate for any significant differences in the means of the numeric response between two categorical predictors.
+| [T-Test P-Values](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) define the probability of obtaining an effect during hypothesis testing, at least as large as the one actually observed in the sample data, specifically assuming that the null hypothesis is true. The test of hypothesis involved applying T-Test to evaluate for any significant differences in the means of the numeric response between two categorical predictors. The presence of low T-Test p-values indicate the univariate association between the numeric predictors and the numeric response.
 |
 | **[A]** The volcano plot - t-Test p-value was obtained using the <mark style="background-color: #CCECFF">**stats**</mark> package. High raw values of the negative logarithm of the metric, and the absolute difference between group means indicate that the factor predictors were associated with the numeric response.
 |

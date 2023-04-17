@@ -21631,7 +21631,9 @@ instance in a sequence of instances ordered by the distance is taken
 into account based on a a user-defined parameter controlling the
 influence of the distance. The contributions of each K-nearest instances
 are normalized by dividing the results with the sum of all K
-contributions.<br />
+contributions. The presence of high relief values indicate the
+univariate association between the numeric predictors and the numeric
+response.<br />
 <br />
 <strong>[A]</strong> The relief values statistic was obtained using the
 <mark style="background-color: #CCECFF"><strong>CORElearn</strong></mark>
@@ -21704,7 +21706,9 @@ hypothesis testing, at least as large as the one actually observed in
 the sample data, specifically assuming that the null hypothesis is true.
 The test of hypothesis involved applying T-Test to evaluate for any
 significant differences in the means of the numeric response between two
-categorical predictors.<br />
+categorical predictors. The presence of low T-Test p-values indicate the
+univariate association between the numeric predictors and the numeric
+response.<br />
 <br />
 <strong>[A]</strong> The volcano plot - t-Test p-value was obtained
 using the
