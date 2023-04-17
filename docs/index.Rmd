@@ -1110,6 +1110,8 @@ dotplot(Predictor ~ LOWESS_PR | Metric,
 
 ###  1.5.2 Pearson's Correlation Coefficient (PCC)
 |
+| [Pearson's Correlation Coefficient](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) measures the linear correlation for a pair of features by calculating the ratio between their covariance and the product of their standard deviations. The presence of highly correlated features during the modeling process may lead to model fitting problems, wider confidence intervals, erratic changes in the coefficient estimates and thus misleading inferences.
+|
 | **[A]** The Pearson's correlation coefficient was obtained using the <mark style="background-color: #CCECFF">**stats**</mark> package. High absolute values of the metric indicate that the numeric predictors were associated with the numeric response.
 |
 | **[B]** The numeric predictors which demonstrated the best feature importance in terms of this metric are as follows:
@@ -1525,6 +1527,7 @@ xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
 | **[Article]** [Maximal Information Coefficient](https://www.r-bloggers.com/2014/09/maximal-information-coefficient-part-ii/) by R Bloggers Team
 | **[Article]** [Visualization of Volcano Plots in R](https://sdgamboa.github.io/post/2020_volcano/) by Samuel David Gamboa-Tuz
 | **[Article]** [Using Volcano Plots in R to Visualize Microarray and RNA-seq Results](https://www.r-bloggers.com/2014/05/using-volcano-plots-in-r-to-visualize-microarray-and-rna-seq-results/) by Stephen Turner
+| **[Publication]** [Mathematical Contributions to the Theory of Evolution: Regression, Heredity and Panmixia](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) by Karl Pearson (Royal Society)
 | **[Course]** [Applied Data Mining and Statistical Learning](https://online.stat.psu.edu/stat508/) by Penn State Eberly College of Science
 | **[Course]** [Regression Methods](https://online.stat.psu.edu/stat501/) by Penn State Eberly College of Science
 | **[Course]** [Applied Regression Analysis](https://online.stat.psu.edu/stat462/) by Penn State Eberly College of Science
