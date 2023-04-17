@@ -21619,6 +21619,20 @@ feature importance in terms of this metric are as follows:<br />
 <div id="relief-values-rv" class="section level3">
 <h3>1.5.5 Relief Values (RV)</h3>
 <div class="line-block"><br />
+<a href="https://link.springer.com/article/10.1023/A:1025667309714">Relief
+Values</a> are heuristic measures which estimate the quality of
+variables according to how well their values compare to instances that
+are near to each other, but are efficient in detecting contextual
+information even with strong dependencies between attributes. Random
+instances and the corresponding K-nearest instances are selected, with
+the the weights for the different prediction values, different
+attributes and different prediction consolidated. The rank of the
+instance in a sequence of instances ordered by the distance is taken
+into account based on a a user-defined parameter controlling the
+influence of the distance. The contributions of each K-nearest instances
+are normalized by dividing the results with the sum of all K
+contributions.<br />
+<br />
 <strong>[A]</strong> The relief values statistic was obtained using the
 <mark style="background-color: #CCECFF"><strong>CORElearn</strong></mark>
 package. High raw values of the metric indicate that the numeric
@@ -22799,6 +22813,9 @@ Spearman (The American Journal of Psychology)<br />
 Novel Associations in Large Data Sets</a> by David Reshef, Yakir Reshef,
 Hilary Finucane, Sharon Grossman, Gilean Mcvean, Peter Turnbaugh, Eric
 Lander, Michael Mitzenmacher and Pardis Sabeti (Science)<br />
+<strong>[Publication]</strong> <a href="https://link.springer.com/article/10.1023/A:1025667309714">Theoretical
+and Empirical Analysis of ReliefF and RReliefF</a> by Marko
+Robnik-Šikonja and Igor Kononenko (Machine Learning)<br />
 <strong>[Publication]</strong> <a href="https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents">First
 (?) Occurrence of Common Terms in Probability and Statistics-A Second
 List, with Corrections</a> by H David (The American Statistician)<br />
