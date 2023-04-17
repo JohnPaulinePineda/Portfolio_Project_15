@@ -21385,12 +21385,12 @@ feature importance in terms of this metric are as follows:<br />
 <h3>1.5.2 Pearson’s Correlation Coefficient (PCC)</h3>
 <div class="line-block"><br />
 <a href="https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007">Pearson’s
-Correlation Coefficient</a> measures the linear correlation for a pair
-of features by calculating the ratio between their covariance and the
-product of their standard deviations. The presence of highly correlated
-features during the modeling process may lead to model fitting problems,
-wider confidence intervals, erratic changes in the coefficient estimates
-and thus misleading inferences.<br />
+Correlation Coefficient</a> is a parametric measure of the linear
+correlation for a pair of features by calculating the ratio between
+their covariance and the product of their standard deviations. The
+presence of high absolute correlation values indicate the univariate
+association between the numeric predictors and the numeric
+response.<br />
 <br />
 <strong>[A]</strong> The Pearson’s correlation coefficient was obtained
 using the
@@ -21456,6 +21456,14 @@ feature importance in terms of this metric are as follows:<br />
 <div id="spearmans-rank-correlation-coefficient-srcc" class="section level3">
 <h3>1.5.3 Spearman’s Rank Correlation Coefficient (SRCC)</h3>
 <div class="line-block"><br />
+<a href="https://www.jstor.org/stable/1412159?origin=crossref">Spearman’s
+Rank Correlation Coefficient</a> is a non-parametric measure of the
+linear correlation for a pair of features by applying the Spearman’s
+rank equation to the sum of the squared differences between their ranks.
+The presence of high absolute correlation values indicate the univariate
+association between the numeric predictors and the numeric
+response.<br />
+<br />
 <strong>[A]</strong> The Spearman’s correlation coefficient was obtained
 using the
 <mark style="background-color: #CCECFF"><strong>stats</strong></mark>
@@ -21658,8 +21666,9 @@ feature importance in terms of this metric are as follows:<br />
 P-Values</a> define the probability of obtaining an effect during
 hypothesis testing, at least as large as the one actually observed in
 the sample data, specifically assuming that the null hypothesis is true.
-For a T-Test, the means of a numeric variable are evaluated between two
-categories if they significantly differ from each another.<br />
+The test of hypothesis involved applying T-Test to evaluate for any
+significant differences in the means of the numeric response between two
+categorical predictors.<br />
 <br />
 <strong>[A]</strong> The volcano plot - t-Test p-value was obtained
 using the
@@ -22758,6 +22767,9 @@ Stephen Turner<br />
 <strong>[Publication]</strong> <a href="https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007">Mathematical
 Contributions to the Theory of Evolution: Regression, Heredity and
 Panmixia</a> by Karl Pearson (Royal Society)<br />
+<strong>[Publication]</strong> <a href="https://www.jstor.org/stable/1412159?origin=crossref">The Proof
+and Measurement of Association between Two Things</a> by Charles
+Spearman (The American Journal of Psychology)<br />
 <strong>[Publication]</strong> <a href="https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents">First
 (?) Occurrence of Common Terms in Probability and Statistics-A Second
 List, with Corrections</a> by H David (The American Statistician)<br />
