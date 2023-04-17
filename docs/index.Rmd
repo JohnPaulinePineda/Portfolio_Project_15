@@ -1291,6 +1291,8 @@ dotplot(Predictor ~ RV | Metric,
 
 ###  1.5.6 Volcano Plot - T-Test (VP_T)
 |
+| [T-Test P-Values](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) define the probability of obtaining an effect during hypothesis testing, at least as large as the one actually observed in the sample data, specifically assuming that the null hypothesis is true. For a T-Test, the means of a numeric variable are evaluated between two categories if they significantly differ from each another. 
+|
 | **[A]** The volcano plot - t-Test p-value was obtained using the <mark style="background-color: #CCECFF">**stats**</mark> package. High raw values of the negative logarithm of the metric, and the absolute difference between group means indicate that the factor predictors were associated with the numeric response.
 |
 | **[B]** The factor predictors which demonstrated the best feature importance in terms of the negative logarithm of the t-Test p-value are as follows:
@@ -1528,6 +1530,7 @@ xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
 | **[Article]** [Visualization of Volcano Plots in R](https://sdgamboa.github.io/post/2020_volcano/) by Samuel David Gamboa-Tuz
 | **[Article]** [Using Volcano Plots in R to Visualize Microarray and RNA-seq Results](https://www.r-bloggers.com/2014/05/using-volcano-plots-in-r-to-visualize-microarray-and-rna-seq-results/) by Stephen Turner
 | **[Publication]** [Mathematical Contributions to the Theory of Evolution: Regression, Heredity and Panmixia](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) by Karl Pearson (Royal Society)
+| **[Publication]** [First (?) Occurrence of Common Terms in Probability and Statistics-A Second List, with Corrections](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) by H David (The American Statistician)
 | **[Course]** [Applied Data Mining and Statistical Learning](https://online.stat.psu.edu/stat508/) by Penn State Eberly College of Science
 | **[Course]** [Regression Methods](https://online.stat.psu.edu/stat501/) by Penn State Eberly College of Science
 | **[Course]** [Applied Regression Analysis](https://online.stat.psu.edu/stat462/) by Penn State Eberly College of Science
