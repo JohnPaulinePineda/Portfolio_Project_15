@@ -1299,7 +1299,7 @@ dotplot(Predictor ~ RV | Metric,
 
 ###  1.5.6 Volcano Plot - T-Test (VP_T)
 |
-| [T-Test P-Values](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) define the probability of obtaining an effect during hypothesis testing, at least as large as the one actually observed in the sample data, specifically assuming that the null hypothesis is true. The test of hypothesis involved applying T-Test to evaluate for any significant differences in the means of the numeric response between two categorical predictors. The presence of low T-Test p-values indicate the univariate association between the numeric predictors and the numeric response.
+| [T-Test P-Values](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) define the probability of obtaining an effect during hypothesis testing, at least as large as the one actually observed in the sample data, specifically assuming that the null hypothesis is true. The test of hypothesis involved applying T-Test to evaluate for any significant differences in the means of the numeric response between two categorical predictors. The presence of low T-Test p-values indicate the univariate discrimination of the categorical predictors in terms of the numeric response.
 |
 | **[A]** The volcano plot - t-Test p-value was obtained using the <mark style="background-color: #CCECFF">**stats**</mark> package. High raw values of the negative logarithm of the metric, and the absolute difference between group means indicate that the factor predictors were associated with the numeric response.
 |
