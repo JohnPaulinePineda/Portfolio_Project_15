@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
 ```
 # **1. Table of Contents**
 |
-| This document presents a non-exhaustive list of feature importance metrics for predictors with numeric responses using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>.
+| This project explores different model-independent feature importance metrics for predictors with numeric responses using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>. Metrics applied in the analysis to evaluate feature importance for numeric predictors included the **Locally Weighted Scatterplot Smoothing Pseudo-R-Squared**, **Pearson’s Correlation Coefficient**, **Spearman’s Rank Correlation Coefficient**, **Maximal Information Coefficient** and **Relief Values**, while that for factor predictors included the **Volcano Plot Using T-Test**.
 |
 | Model-independent feature importance determines the degree of relationship, usefulness and contribution of the independent variables (features) with respect to the dependent variables (target responses), outside the context of the particular model structure being applied. Analyzing the importance metrics of features allow the discovery and inclusion of only relevant features, reducing the number of meaningful variables in the model thereby providing more targeted insights into the data, speeding up the processing time, boosting its predictive performance and improving the interpretability of the results. The algorithms applied in this study (mostly contained in the <mark style="background-color: #CCECFF">**caret**</mark> package, <mark style="background-color: #CCECFF">**stats**</mark> package, <mark style="background-color: #CCECFF">**minerva**</mark> package and <mark style="background-color: #CCECFF">**CORElearn**</mark> packages) attempt to assign scores to input features based on their relevance at discriminating or predicting the target variable.
 |
@@ -1406,11 +1406,11 @@ dotplot(Predictor ~ AbsoluteMeanDifference | Metric,
 ## 1.6 Evaluation Summary
 |
 | **[A]** The model-independent feature importance for all numeric predictors were evaluated in terms of the following metrics:
-|      **[A.1]** LOWESS_PR: Locally Weighted Scatterplot Smoothing Pseudo-R-Squared (<mark style="background-color: #CCECFF">**caret**</mark> package)
-|      **[A.2]** PCC: Pearson's Correlation Coefficient (<mark style="background-color: #CCECFF">**stats**</mark> package)
-|      **[A.3]** SRCC: Spearman’s Rank Correlation Coefficient (<mark style="background-color: #CCECFF">**stats**</mark> package)
-|      **[A.4]** MIC: Maximal Information Coefficient (<mark style="background-color: #CCECFF">**minerva**</mark> package) 
-|      **[A.5]** RV: Relief Values (<mark style="background-color: #CCECFF">**CORElearn**</mark> package) 
+|      **[A.1]** **LOWESS_PR: Locally Weighted Scatterplot Smoothing Pseudo-R-Squared** (<mark style="background-color: #CCECFF">**caret**</mark> package)
+|      **[A.2]** **PCC: Pearson's Correlation Coefficient** (<mark style="background-color: #CCECFF">**stats**</mark> package)
+|      **[A.3]** **SRCC: Spearman’s Rank Correlation Coefficient** (<mark style="background-color: #CCECFF">**stats**</mark> package)
+|      **[A.4]** **MIC: Maximal Information Coefficient** (<mark style="background-color: #CCECFF">**minerva**</mark> package) 
+|      **[A.5]** **RV: Relief Values** (<mark style="background-color: #CCECFF">**CORElearn**</mark> package) 
 |
 | **[B]** The numeric predictors which demonstrated the most consistent feature importance across the given metrics are as follows:
 |      **[B.1]** <span style="color: #FF0000">MolWeight</span>
@@ -1420,7 +1420,7 @@ dotplot(Predictor ~ AbsoluteMeanDifference | Metric,
 |      **[B.5]** <span style="color: #FF0000">NumRings</span>
 |
 | **[C]** The model-independent feature importance for all factor predictors were evaluated in terms of the following metrics:
-|      **[C.1]** VP_T: Volcano Plot - T-Test (<mark style="background-color: #CCECFF">**stats**</mark> package)
+|      **[C.1]** **VP_T: Volcano Plot - T-Test** (<mark style="background-color: #CCECFF">**stats**</mark> package)
 |
 | **[D]** The factor predictors which demonstrated the most consistent feature importance across the given metrics are as follows:
 |      **[D.1]** <span style="color: #FF0000">FP076</span>
