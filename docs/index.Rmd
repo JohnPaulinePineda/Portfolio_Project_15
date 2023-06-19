@@ -35,6 +35,9 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
 |      **[B.2]** 228/229 predictors = All remaining variables (208/228 factor + 20/228 numeric)
 |     
 | 
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.1, warning=FALSE, message=FALSE}
 ##################################
 # Loading R libraries
@@ -102,6 +105,8 @@ PDA <- Solubility_Train
 )
 ```
 
+</details>
+
 ##  1.2 Data Quality Assessment
 |
 | Data quality assessment:
@@ -131,6 +136,10 @@ PDA <- Solubility_Train
 |      **[D.2]** <span style="color: #FF0000">NumChlorine</span> variable (numeric)
 |      **[D.3]** <span style="color: #FF0000">HydrophilicFactor</span> variable (numeric)
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.2, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -348,6 +357,8 @@ if (length(names(DQA.Predictors.Numeric))==0) {
 
 ```
 
+</details>
+
 ##  1.3 Data Preprocessing
 
 ###  1.3.1 Outlier
@@ -376,6 +387,10 @@ if (length(names(DQA.Predictors.Numeric))==0) {
 |      **[A.19]** <span style="color: #FF0000">SurfaceArea1</span> variable (19 outliers detected)
 |      **[A.20]** <span style="color: #FF0000">SurfaceArea2</span> variable (12 outliers detected)
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.3.1, warning=FALSE, message=FALSE, fig.width=15, fig.height=3}
 ##################################
 # Loading dataset
@@ -427,6 +442,8 @@ dim(DPA.Predictors.Numeric)
 
 ```
 
+</details>
+
 ###  1.3.2 Zero and Near-Zero Variance
 |
 | Zero and near-zero variance data assessment:
@@ -438,6 +455,10 @@ dim(DPA.Predictors.Numeric)
 |      **[B.2]** <span style="color: #FF0000">FP199</span> variable (factor)
 |      **[B.3]** <span style="color: #FF0000">FP200</span> variable (factor)
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.3.2, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -504,6 +525,8 @@ dim(DPA_ExcludedLowVariance)
 
 ```
 
+</details>
+
 ###  1.3.3 Collinearity
 |
 | High collinearity data assessment:
@@ -513,6 +536,10 @@ dim(DPA_ExcludedLowVariance)
 |      **[A.2]** <span style="color: #FF0000">NumMultBonds</span> and <span style="color: #FF0000">NumAromaticBonds</span> variables (numeric)
 |      **[A.3]** <span style="color: #FF0000">NumAtoms</span> and <span style="color: #FF0000">NumBonds</span> variables (numeric)
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.3.3, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -612,6 +639,8 @@ dim(DPA_ExcludedHighCorrelation)
 
 ```
 
+</details>
+
 ###  1.3.4 Linear Dependencies
 |
 | Linear dependency data assessment:
@@ -629,6 +658,10 @@ dim(DPA_ExcludedHighCorrelation)
 |      **[C.2]** <span style="color: #FF0000">NumAtoms</span> variable (numeric)
 |      **[C.3]** <span style="color: #FF0000">NumNonHAtoms</span> variable (numeric)
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.3.4, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -709,12 +742,18 @@ dim(DPA_ExcludedLinearlyDependent)
 
 ```
 
+</details>
+
 ###  1.3.5 Shape Transformation
 |
 | Data transformation assessment:
 |
 | **[A]** A number of numeric variables in the dataset were observed to be right-skewed which required shape transformation for data distribution stability. Considering that all numeric variables were strictly positive values, the <span style="color: #0000FF">BoxCox</span> method from the <mark style="background-color: #CCECFF">**caret**</mark> package was used to transform their distributional shapes.
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.3.5, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -749,12 +788,19 @@ dim(DPA_BoxCoxTransformed)
 
 ```
 
+</details>
+
 ###  1.3.6 Centering and Scaling
 |
 | Centering and scaling data assessment:
 |
 | **[A]** To maintain numerical stability during modelling, centering and scaling transformations were applied on the transformed numeric variables. The <span style="color: #0000FF">center</span> method from the <mark style="background-color: #CCECFF">**caret**</mark> package was implemented which subtracts the average value of a numeric variable to all the values. As a result of centering, the variables had zero mean values. In addition, the <span style="color: #0000FF">scale</span> method, also from the <mark style="background-color: #CCECFF">**caret**</mark> package, was applied which performs a center transformation with each value of the variable divided by its standard deviation. Scaling the data coerced the values to have a common standard deviation of one.
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+
 ```{r section_1.3.6, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -795,6 +841,8 @@ dim(DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed)
 
 ```
 
+</details>
+
 ###  1.3.7 Pre-Processed Dataset
 |
 | Preliminary dataset assessment:
@@ -814,6 +862,10 @@ dim(DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed)
 |      **[C.4]** 3 predictors removed due to high correlation
 |      **[C.5]** 2 predictors removed due to linear dependencies
 | 
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.3.7, warning=FALSE, message=FALSE}
 ##################################
 # Creating the pre-modelling
@@ -883,6 +935,8 @@ dim(PMA_PreModelling_Test)
 
 ```
 
+</details>
+
 ## 1.4 Data Exploration
 |
 | Exploratory data analysis:
@@ -913,6 +967,10 @@ dim(PMA_PreModelling_Test)
 |      **[B.16]** <span style="color: #FF0000">FP014</span> variable (factor)
 |      **[B.17]** <span style="color: #FF0000">FP013</span> variable (factor)
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.4, warning=FALSE, message=FALSE}
 ##################################
 # Loading dataset
@@ -1049,6 +1107,8 @@ bwplot(Log_Solubility~Structure|Descriptor,
 
 ```
 
+</details>
+
 ## 1.5 Model-Independent Feature Importance Metrics
 
 ###  1.5.1 Locally Weighted Scatterplot Smoothing Pseudo-R-Squared (LOWESS_PR)
@@ -1064,6 +1124,10 @@ bwplot(Log_Solubility~Structure|Descriptor,
 |      **[B.4]** <span style="color: #FF0000">NumHalogen</span> = 0.25415
 |      **[B.5]** <span style="color: #FF0000">NumChlorine</span> = 0.25407
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.1, warning=FALSE, message=FALSE}
 ##################################
 # Filtering in the numeric predictors
@@ -1110,6 +1174,8 @@ dotplot(Predictor ~ LOWESS_PR | Metric,
         })
 ```
 
+</details>
+
 ###  1.5.2 Pearson's Correlation Coefficient (PCC)
 |
 | [Pearson's Correlation Coefficient](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) is a parametric measure of the linear correlation for a pair of features by calculating the ratio between their covariance and the product of their standard deviations. The presence of high absolute correlation values indicate the univariate association between the numeric predictors and the numeric response.
@@ -1123,6 +1189,10 @@ dotplot(Predictor ~ LOWESS_PR | Metric,
 |      **[B.4]** <span style="color: #FF0000">NumHalogen</span> = 0.50414
 |      **[B.5]** <span style="color: #FF0000">NumChlorine</span> = 0.50405
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.2, warning=FALSE, message=FALSE}
 ##################################
 # Obtaining the Pearson correlation coefficient
@@ -1156,6 +1226,8 @@ dotplot(Predictor ~ PCC | Metric,
         })
 ```
 
+</details>
+
 ###  1.5.3 Spearman's Rank Correlation Coefficient (SRCC)
 |
 | [Spearman's Rank Correlation Coefficient](https://www.jstor.org/stable/1412159?origin=crossref) is a non-parametric measure of the linear correlation for a pair of features by applying the Spearman's rank equation to the sum of the  squared differences between their ranks. The presence of high absolute correlation values indicate the univariate association between the numeric predictors and the numeric response.
@@ -1169,6 +1241,10 @@ dotplot(Predictor ~ PCC | Metric,
 |      **[B.4]** <span style="color: #FF0000">NumRings</span> = 0.50942
 |      **[B.5]** <span style="color: #FF0000">NumMultBonds</span> = 0.47971
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.3, warning=FALSE, message=FALSE}
 ##################################
 # Obtaining the Spearman correlation coefficient
@@ -1202,6 +1278,8 @@ dotplot(Predictor ~ SRCC | Metric,
         })
 ```
 
+</details>
+
 ###  1.5.4 Maximal Information Coefficient (MIC)
 |
 | [Maximal Information Coefficient](https://www.science.org/doi/10.1126/science.1205438) is an information theory-based measure of two-variable dependence through the computation of the mutual information normalized by the minimum joint entropy. It evaluates the strength of linear or non-linear association using binning as a means to apply mutual information between continuous random variables and selecting the maximum over many possible grids. The presence of high coefficient values indicate the univariate association between the numeric predictors and the numeric response.
@@ -1215,6 +1293,10 @@ dotplot(Predictor ~ SRCC | Metric,
 |      **[B.4]** <span style="color: #FF0000">HydrophilicFactor</span> = 0.32085
 |      **[B.5]** <span style="color: #FF0000">NumRings</span> = 0.31618
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.4, warning=FALSE, message=FALSE}
 ##################################
 # Obtaining the maximal information coefficient
@@ -1249,6 +1331,8 @@ dotplot(Predictor ~ MIC | Metric,
         })
 ```
 
+</details>
+
 ###  1.5.5 Relief Values (RV)
 |
 | [Relief Values](https://link.springer.com/article/10.1023/A:1025667309714) are heuristic measures which estimate the quality of variables according to how well their values compare to instances that are near to each other, but are efficient in detecting contextual information even with strong dependencies between attributes. Random instances and the corresponding K-nearest instances are selected, with the the weights for the different prediction values, different attributes and different prediction consolidated. The rank of the instance in a sequence of instances ordered by the distance is taken into account based on a a user-defined parameter controlling the influence of the distance. The contributions of each K-nearest instances are normalized by dividing the results with the sum of all K contributions. The presence of high relief values indicate the univariate association between the numeric predictors and the numeric response.
@@ -1262,6 +1346,10 @@ dotplot(Predictor ~ MIC | Metric,
 |      **[B.4]** <span style="color: #FF0000">NumMultBonds</span> = 0.06807
 |      **[B.5]** <span style="color: #FF0000">SurfaceArea2</span> = 0.06623
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.5, warning=FALSE, message=FALSE}
 ##################################
 # Obtaining the relief values
@@ -1297,6 +1385,8 @@ dotplot(Predictor ~ RV | Metric,
         })
 ```
 
+</details>
+
 ###  1.5.6 Volcano Plot - T-Test (VP_T)
 |
 | [T-Test P-Values](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) define the probability of obtaining an effect during hypothesis testing, at least as large as the one actually observed in the sample data, specifically assuming that the null hypothesis is true. The test of hypothesis involved applying T-Test to evaluate for any significant differences in the means of the numeric response between two categorical predictors. The presence of low T-Test p-values indicate the univariate discrimination of the categorical predictors in terms of the numeric response.
@@ -1317,6 +1407,10 @@ dotplot(Predictor ~ RV | Metric,
 |      **[C.4]** <span style="color: #FF0000">FP149</span> = 2.64671
 |      **[C.5]** <span style="color: #FF0000">FP172</span> = 2.46454
 |
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.5.6, warning=FALSE, message=FALSE}
 ##################################
 # Filtering in the factor predictors
@@ -1403,6 +1497,8 @@ dotplot(Predictor ~ AbsoluteMeanDifference | Metric,
 
 ```
 
+</details>
+
 ## 1.6 Evaluation Summary
 |
 | **[A]** The model-independent feature importance for all numeric predictors were evaluated in terms of the following metrics:
@@ -1430,6 +1526,9 @@ dotplot(Predictor ~ AbsoluteMeanDifference | Metric,
 |      **[D.5]** <span style="color: #FF0000">FP065</span>
 |
 |
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
 ```{r section_1.6, warning=FALSE, message=FALSE}
 ##################################
 # Consolidating all performance metrics
@@ -1488,6 +1587,8 @@ xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
        main = "Feature Importance Comparison for Numeric Predictors")
 
 ```
+
+</details>
 
 # **2. References**
 |
