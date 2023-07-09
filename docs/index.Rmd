@@ -1,5 +1,5 @@
 ---
-title: "R : Evaluating Model-Independent Feature Importance for Predictors with Numeric Responses"
+title: "Feature Selection : Evaluating Model-Independent Feature Importance for Predictors with Numeric Responses"
 author: "John Pauline Pineda"
 date: "December 14, 2022"
 output: 
