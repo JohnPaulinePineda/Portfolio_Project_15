@@ -1574,7 +1574,7 @@ splom(~NumericPredictor_Metrics[,c(1:5)],
 # Consolidating all performance metrics
 # for the factor predictors
 ##################################
-xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
+TTEST_P.Value_Plot <- xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
        groups = VP_T_Summary$Group,
        data = VP_T_Summary,
        xlab = "Mean With Structure - Mean Without Structure",
@@ -1585,6 +1585,9 @@ xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
        alpha = 0.45,
        auto.key = list(points = TRUE, space = "top"),
        main = "Feature Importance Comparison for Numeric Predictors")
+
+grid.arrange(TTEST_P.Value_Plot, 
+             ncol = 2) 
 
 ```
 
