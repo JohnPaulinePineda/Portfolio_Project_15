@@ -1,0 +1,1642 @@
+---
+title: "Feature Selection : Evaluating Model-Independent Feature Importance for Predictors with Numeric Responses"
+author: "John Pauline Pineda"
+date: "December 14, 2022"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: readable
+    highlight: tango
+    css: doc.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=10)
+```
+# **1. Table of Contents**
+|
+| This project explores different model-independent feature importance metrics for predictors with numeric responses using various helpful packages in <mark style="background-color: #CCECFF">**R**</mark>. Metrics applied in the analysis to evaluate feature importance for numeric predictors included the **Locally Weighted Scatterplot Smoothing Pseudo-R-Squared**, **Pearson’s Correlation Coefficient**, **Spearman’s Rank Correlation Coefficient**, **Maximal Information Coefficient** and **Relief Values**, while that for factor predictors included the **Volcano Plot Using T-Test**. All results were consolidated in a [<span style="color: #FF0000">**Summary**</span>](#summary) presented at the end of the document.
+|
+| Model-independent feature importance determines the degree of relationship, usefulness and contribution of the independent variables (features) with respect to the dependent variables (target responses), outside the context of the particular model structure being applied. Analyzing the importance metrics of features allow the discovery and inclusion of only relevant features, reducing the number of meaningful variables in the model thereby providing more targeted insights into the data, speeding up the processing time, boosting its predictive performance and improving the interpretability of the results. The algorithms applied in this study (mostly contained in the <mark style="background-color: #CCECFF">**caret**</mark> package, <mark style="background-color: #CCECFF">**stats**</mark> package, <mark style="background-color: #CCECFF">**minerva**</mark> package and <mark style="background-color: #CCECFF">**CORElearn**</mark> packages) attempt to assign scores to input features based on their relevance at discriminating or predicting the target variable.
+|
+##  1.1 Sample Data
+|
+| The <mark style="background-color: #EEEEEE;color: #FF0000">**Solubility**</mark>  dataset from the  <mark style="background-color: #CCECFF">**AppliedPredictiveModeling**</mark> package was used for this illustrated example.
+|
+| Preliminary dataset assessment:
+|
+| **[A]** 1267 rows (observations)
+|      **[A.1]** Train Set = 951 observations
+|      **[A.2]** Test Set = 316 observations
+| 
+| **[B]** 229 columns (variables)
+|      **[B.1]** 1/229 response = <span style="color: #FF0000">Log_Solubility</span> variable (numeric)
+|      **[B.2]** 228/229 predictors = All remaining variables (208/228 factor + 20/228 numeric)
+|     
+| 
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.1, warning=FALSE, message=FALSE}
+##################################
+# Loading R libraries
+##################################
+library(AppliedPredictiveModeling)
+library(caret)
+library(rpart)
+library(lattice)
+library(dplyr)
+library(tidyr)
+library(moments)
+library(skimr)
+library(RANN)
+library(pls)
+library(corrplot)
+library(tidyverse)
+library(lares)
+library(DMwR)
+library(gridExtra)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+library(stats)
+library(nnet)
+library(elasticnet)
+library(earth)
+library(party)
+library(kernlab)
+library(randomForest)
+library(Cubist)
+library(minerva)
+library(CORElearn)
+
+##################################
+# Loading source and
+# formulating the train set
+##################################
+data(solubility)
+Solubility_Train <- as.data.frame(cbind(solTrainY,solTrainX))
+Solubility_Test  <- as.data.frame(cbind(solTestY,solTestX))
+
+##################################
+# Performing a general exploration of the train set
+##################################
+dim(Solubility_Train)
+str(Solubility_Train)
+summary(Solubility_Train)
+
+##################################
+# Performing a general exploration of the test set
+##################################
+dim(Solubility_Test)
+str(Solubility_Test)
+summary(Solubility_Test)
+
+##################################
+# Formulating a data type assessment summary
+##################################
+PDA <- Solubility_Train
+(PDA.Summary <- data.frame(
+  Column.Index=c(1:length(names(PDA))),
+  Column.Name= names(PDA), 
+  Column.Type=sapply(PDA, function(x) class(x)), 
+  row.names=NULL)
+)
+```
+
+</details>
+
+##  1.2 Data Quality Assessment
+|
+| **[A]** No missing observations noted for any variable.
+|
+| **[B]** Low variance observed for 127 variables with First.Second.Mode.Ratio>5.
+|      **[B.1]-[B.33]** <span style="color: #FF0000">FP013</span> to <span style="color: #FF0000">FP045</span> variables (factor)
+|      **[B.34]-[B.45]** <span style="color: #FF0000">FP048</span> to <span style="color: #FF0000">FP059</span> variables (factor)
+|      **[B.46]** <span style="color: #FF0000">FP114</span> variable (factor)
+|      **[B.47]-[B.50]** <span style="color: #FF0000">FP119</span> to <span style="color: #FF0000">FP122</span> variable (factor)
+|      **[B.51]-[B.88]** <span style="color: #FF0000">FP124</span> to <span style="color: #FF0000">FP161</span> variables (factor)
+|      **[B.89]-[B.118]** <span style="color: #FF0000">FP172</span> to <span style="color: #FF0000">FP201</span> variables (factor)
+|      **[B.119]-[B.124]** <span style="color: #FF0000">FP203</span> to <span style="color: #FF0000">FP208</span> variables (factor)
+|      **[B.125]** <span style="color: #FF0000">NumSulfer</span> variable (numeric)
+|      **[B.126]** <span style="color: #FF0000">NumChlorine</span> variable (numeric)
+|      **[B.127]** <span style="color: #FF0000">NumHalogen</span> variable (numeric)
+|
+| **[C]** Low variance observed for 4 variables with Unique.Count.Ratio<0.01.
+|      **[C.1]** <span style="color: #FF0000">NumDblBonds</span> variable (numeric)
+|      **[C.2]** <span style="color: #FF0000">NumNitrogen</span> variable (numeric)
+|      **[C.3]** <span style="color: #FF0000">NumSulfer</span> variable (numeric)
+|      **[C.4]** <span style="color: #FF0000">NumRings</span> variable (numeric)
+|
+| **[D]** High skewness observed for 3 variables with Skewness>3 or Skewness<(-3).
+|      **[D.1]** <span style="color: #FF0000">NumSulfer</span> variable (numeric)
+|      **[D.2]** <span style="color: #FF0000">NumChlorine</span> variable (numeric)
+|      **[D.3]** <span style="color: #FF0000">HydrophilicFactor</span> variable (numeric)
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.2, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+DQA <- Solubility_Train
+
+##################################
+# Formulating an overall data quality assessment summary
+##################################
+(DQA.Summary <- data.frame(
+  Column.Index=c(1:length(names(DQA))),
+  Column.Name= names(DQA), 
+  Column.Type=sapply(DQA, function(x) class(x)), 
+  Row.Count=sapply(DQA, function(x) nrow(DQA)),
+  NA.Count=sapply(DQA,function(x)sum(is.na(x))),
+  Fill.Rate=sapply(DQA,function(x)format(round((sum(!is.na(x))/nrow(DQA)),3),nsmall=3)),
+  row.names=NULL)
+)
+
+##################################
+# Listing all predictors
+##################################
+DQA.Predictors <- DQA[,!names(DQA) %in% c("solTrainY")]
+
+##################################
+# Listing all numeric predictors
+##################################
+DQA.Predictors.Numeric <- DQA.Predictors[,-(grep("FP", names(DQA.Predictors)))]
+
+if (length(names(DQA.Predictors.Numeric))>0) {
+    print(paste0("There are ",
+               (length(names(DQA.Predictors.Numeric))),
+               " numeric predictor variable(s)."))
+} else {
+  print("There are no numeric predictor variables.")
+}
+
+##################################
+# Listing all factor predictors
+##################################
+DQA.Predictors.Factor <-as.data.frame(lapply(DQA.Predictors[(grep("FP", names(DQA.Predictors)))],factor))
+
+if (length(names(DQA.Predictors.Factor))>0) {
+    print(paste0("There are ",
+               (length(names(DQA.Predictors.Factor))),
+               " factor predictor variable(s)."))
+} else {
+  print("There are no factor predictor variables.")
+}
+
+##################################
+# Formulating a data quality assessment summary for factor predictors
+##################################
+if (length(names(DQA.Predictors.Factor))>0) {
+  
+  ##################################
+  # Formulating a function to determine the first mode
+  ##################################
+  FirstModes <- function(x) {
+    ux <- unique(na.omit(x))
+    tab <- tabulate(match(x, ux))
+    ux[tab == max(tab)]
+  }
+
+  ##################################
+  # Formulating a function to determine the second mode
+  ##################################
+  SecondModes <- function(x) {
+    ux <- unique(na.omit(x))
+    tab <- tabulate(match(x, ux))
+    fm = ux[tab == max(tab)]
+    sm = x[!(x %in% fm)]
+    usm <- unique(sm)
+    tabsm <- tabulate(match(sm, usm))
+    ifelse(is.na(usm[tabsm == max(tabsm)])==TRUE,
+           return("x"),
+           return(usm[tabsm == max(tabsm)]))
+  }
+  
+  (DQA.Predictors.Factor.Summary <- data.frame(
+  Column.Name= names(DQA.Predictors.Factor), 
+  Column.Type=sapply(DQA.Predictors.Factor, function(x) class(x)), 
+  Unique.Count=sapply(DQA.Predictors.Factor, function(x) length(unique(x))),
+  First.Mode.Value=sapply(DQA.Predictors.Factor, function(x) as.character(FirstModes(x)[1])),
+  Second.Mode.Value=sapply(DQA.Predictors.Factor, function(x) as.character(SecondModes(x)[1])),
+  First.Mode.Count=sapply(DQA.Predictors.Factor, function(x) sum(na.omit(x) == FirstModes(x)[1])),
+  Second.Mode.Count=sapply(DQA.Predictors.Factor, function(x) sum(na.omit(x) == SecondModes(x)[1])),
+  Unique.Count.Ratio=sapply(DQA.Predictors.Factor, function(x) format(round((length(unique(x))/nrow(DQA.Predictors.Factor)),3), nsmall=3)),
+  First.Second.Mode.Ratio=sapply(DQA.Predictors.Factor, function(x) format(round((sum(na.omit(x) == FirstModes(x)[1])/sum(na.omit(x) == SecondModes(x)[1])),3), nsmall=3)),
+  row.names=NULL)
+  )
+  
+} 
+
+##################################
+# Formulating a data quality assessment summary for numeric predictors
+##################################
+if (length(names(DQA.Predictors.Numeric))>0) {
+  
+  ##################################
+  # Formulating a function to determine the first mode
+  ##################################
+  FirstModes <- function(x) {
+    ux <- unique(na.omit(x))
+    tab <- tabulate(match(x, ux))
+    ux[tab == max(tab)]
+  }
+
+  ##################################
+  # Formulating a function to determine the second mode
+  ##################################
+  SecondModes <- function(x) {
+    ux <- unique(na.omit(x))
+    tab <- tabulate(match(x, ux))
+    fm = ux[tab == max(tab)]
+    sm = na.omit(x)[!(na.omit(x) %in% fm)]
+    usm <- unique(sm)
+    tabsm <- tabulate(match(sm, usm))
+    ifelse(is.na(usm[tabsm == max(tabsm)])==TRUE,
+           return(0.00001),
+           return(usm[tabsm == max(tabsm)]))
+  }
+  
+  (DQA.Predictors.Numeric.Summary <- data.frame(
+  Column.Name= names(DQA.Predictors.Numeric), 
+  Column.Type=sapply(DQA.Predictors.Numeric, function(x) class(x)), 
+  Unique.Count=sapply(DQA.Predictors.Numeric, function(x) length(unique(x))),
+  Unique.Count.Ratio=sapply(DQA.Predictors.Numeric, function(x) format(round((length(unique(x))/nrow(DQA.Predictors.Numeric)),3), nsmall=3)),
+  First.Mode.Value=sapply(DQA.Predictors.Numeric, function(x) format(round((FirstModes(x)[1]),3),nsmall=3)),
+  Second.Mode.Value=sapply(DQA.Predictors.Numeric, function(x) format(round((SecondModes(x)[1]),3),nsmall=3)),
+  First.Mode.Count=sapply(DQA.Predictors.Numeric, function(x) sum(na.omit(x) == FirstModes(x)[1])),
+  Second.Mode.Count=sapply(DQA.Predictors.Numeric, function(x) sum(na.omit(x) == SecondModes(x)[1])),
+  First.Second.Mode.Ratio=sapply(DQA.Predictors.Numeric, function(x) format(round((sum(na.omit(x) == FirstModes(x)[1])/sum(na.omit(x) == SecondModes(x)[1])),3), nsmall=3)),
+  Minimum=sapply(DQA.Predictors.Numeric, function(x) format(round(min(x,na.rm = TRUE),3), nsmall=3)),
+  Mean=sapply(DQA.Predictors.Numeric, function(x) format(round(mean(x,na.rm = TRUE),3), nsmall=3)),
+  Median=sapply(DQA.Predictors.Numeric, function(x) format(round(median(x,na.rm = TRUE),3), nsmall=3)),
+  Maximum=sapply(DQA.Predictors.Numeric, function(x) format(round(max(x,na.rm = TRUE),3), nsmall=3)),
+  Skewness=sapply(DQA.Predictors.Numeric, function(x) format(round(skewness(x,na.rm = TRUE),3), nsmall=3)),
+  Kurtosis=sapply(DQA.Predictors.Numeric, function(x) format(round(kurtosis(x,na.rm = TRUE),3), nsmall=3)),
+  Percentile25th=sapply(DQA.Predictors.Numeric, function(x) format(round(quantile(x,probs=0.25,na.rm = TRUE),3), nsmall=3)),
+  Percentile75th=sapply(DQA.Predictors.Numeric, function(x) format(round(quantile(x,probs=0.75,na.rm = TRUE),3), nsmall=3)),
+  row.names=NULL)
+  )  
+  
+}
+
+##################################
+# Identifying potential data quality issues
+##################################
+
+##################################
+# Checking for missing observations
+##################################
+if ((nrow(DQA.Summary[DQA.Summary$NA.Count>0,]))>0){
+  print(paste0("Missing observations noted for ",
+               (nrow(DQA.Summary[DQA.Summary$NA.Count>0,])),
+               " variable(s) with NA.Count>0 and Fill.Rate<1.0."))
+  DQA.Summary[DQA.Summary$NA.Count>0,]
+} else {
+  print("No missing observations noted.")
+}
+
+##################################
+# Checking for zero or near-zero variance predictors
+##################################
+if (length(names(DQA.Predictors.Factor))==0) {
+  print("No factor predictors noted.")
+} else if (nrow(DQA.Predictors.Factor.Summary[as.numeric(as.character(DQA.Predictors.Factor.Summary$First.Second.Mode.Ratio))>5,])>0){
+  print(paste0("Low variance observed for ",
+               (nrow(DQA.Predictors.Factor.Summary[as.numeric(as.character(DQA.Predictors.Factor.Summary$First.Second.Mode.Ratio))>5,])),
+               " factor variable(s) with First.Second.Mode.Ratio>5."))
+  DQA.Predictors.Factor.Summary[as.numeric(as.character(DQA.Predictors.Factor.Summary$First.Second.Mode.Ratio))>5,]
+} else {
+  print("No low variance factor predictors due to high first-second mode ratio noted.")
+}
+
+if (length(names(DQA.Predictors.Numeric))==0) {
+  print("No numeric predictors noted.")
+} else if (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$First.Second.Mode.Ratio))>5,])>0){
+  print(paste0("Low variance observed for ",
+               (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$First.Second.Mode.Ratio))>5,])),
+               " numeric variable(s) with First.Second.Mode.Ratio>5."))
+  DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$First.Second.Mode.Ratio))>5,]
+} else {
+  print("No low variance numeric predictors due to high first-second mode ratio noted.")
+}
+
+if (length(names(DQA.Predictors.Numeric))==0) {
+  print("No numeric predictors noted.")
+} else if (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Unique.Count.Ratio))<0.01,])>0){
+  print(paste0("Low variance observed for ",
+               (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Unique.Count.Ratio))<0.01,])),
+               " numeric variable(s) with Unique.Count.Ratio<0.01."))
+  DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Unique.Count.Ratio))<0.01,]
+} else {
+  print("No low variance numeric predictors due to low unique count ratio noted.")
+}
+
+##################################
+# Checking for skewed predictors
+##################################
+if (length(names(DQA.Predictors.Numeric))==0) {
+  print("No numeric predictors noted.")
+} else if (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))>3 |
+                                               as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))<(-3),])>0){
+  print(paste0("High skewness observed for ",
+  (nrow(DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))>3 |
+                                               as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))<(-3),])),
+  " numeric variable(s) with Skewness>3 or Skewness<(-3)."))
+  DQA.Predictors.Numeric.Summary[as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))>3 |
+                                 as.numeric(as.character(DQA.Predictors.Numeric.Summary$Skewness))<(-3),]
+} else {
+  print("No skewed numeric predictors noted.")
+}
+
+```
+
+</details>
+
+##  1.3 Data Preprocessing
+
+###  1.3.1 Outlier
+|
+| **[A]** Outliers noted for 20 variables  with the numeric data visualized through a boxplot including observations classified as suspected outliers using the IQR criterion. The IQR criterion means that all observations above the (75th percentile + 1.5 x IQR) or below the (25th percentile - 1.5 x IQR) are suspected outliers, where IQR is the difference between the third quartile (75th percentile) and first quartile (25th percentile). Outlier treatment for numerical stability remains optional depending on potential model requirements for the subsequent steps.
+|      **[A.1]** <span style="color: #FF0000">MolWeight	</span> variable (8 outliers detected)
+|      **[A.2]** <span style="color: #FF0000">NumAtoms</span> variable (44 outliers detected)
+|      **[A.3]** <span style="color: #FF0000">NumNonHAtoms</span> variable (15 outliers detected)
+|      **[A.4]** <span style="color: #FF0000">NumBonds</span> variable (51 outliers detected)
+|      **[A.5]** <span style="color: #FF0000">NumNonHBonds</span> variable (18 outliers detected)
+|      **[A.6]** <span style="color: #FF0000">NumMultBonds</span> variable (6 outliers detected)
+|      **[A.7]** <span style="color: #FF0000">NumRotBonds</span> variable (23 outliers detected)
+|      **[A.8]** <span style="color: #FF0000">NumDblBonds</span> variable (3 outliers detected)
+|      **[A.9]** <span style="color: #FF0000">NumAromaticBonds</span> variable (35 outliers detected)
+|      **[A.10]** <span style="color: #FF0000">NumHydrogen</span> variable (32 outliers detected)
+|      **[A.11]** <span style="color: #FF0000">NumCarbon</span> variable (35 outliers detected)
+|      **[A.12]** <span style="color: #FF0000">NumNitrogen</span> variable (91 outliers detected)
+|      **[A.13]** <span style="color: #FF0000">NumOxygen</span> variable (36 outliers detected)
+|      **[A.14]** <span style="color: #FF0000">NumSulfer</span> variable (121 outliers detected)
+|      **[A.15]** <span style="color: #FF0000">NumChlorine</span> variable (201 outliers detected)
+|      **[A.16]** <span style="color: #FF0000">NumHalogen</span> variable (99 outliers detected)
+|      **[A.17]** <span style="color: #FF0000">NumRings</span> variable (4 outliers detected)
+|      **[A.18]** <span style="color: #FF0000">HydrophilicFactor</span> variable (53 outliers detected)
+|      **[A.19]** <span style="color: #FF0000">SurfaceArea1</span> variable (19 outliers detected)
+|      **[A.20]** <span style="color: #FF0000">SurfaceArea2</span> variable (12 outliers detected)
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.3.1, warning=FALSE, message=FALSE, fig.width=15, fig.height=3}
+##################################
+# Loading dataset
+##################################
+DPA <- Solubility_Train
+
+##################################
+# Listing all predictors
+##################################
+DPA.Predictors <- DPA[,!names(DPA) %in% c("solTrainY")]
+
+##################################
+# Listing all numeric predictors
+##################################
+DPA.Predictors.Numeric <- DPA.Predictors[,-(grep("FP", names(DPA.Predictors)))]
+
+##################################
+# Identifying outliers for the numeric predictors
+##################################
+OutlierCountList <- c()
+
+for (i in 1:ncol(DPA.Predictors.Numeric)) {
+  Outliers <- boxplot.stats(DPA.Predictors.Numeric[,i])$out
+  OutlierCount <- length(Outliers)
+  OutlierCountList <- append(OutlierCountList,OutlierCount)
+  OutlierIndices <- which(DPA.Predictors.Numeric[,i] %in% c(Outliers))
+  boxplot(DPA.Predictors.Numeric[,i], 
+          ylab = names(DPA.Predictors.Numeric)[i], 
+          main = names(DPA.Predictors.Numeric)[i],
+          horizontal=TRUE)
+  mtext(paste0(OutlierCount, " Outlier(s) Detected"))
+}
+
+OutlierCountSummary <- as.data.frame(cbind(names(DPA.Predictors.Numeric),(OutlierCountList)))
+names(OutlierCountSummary) <- c("NumericPredictors","OutlierCount")
+OutlierCountSummary$OutlierCount <- as.numeric(as.character(OutlierCountSummary$OutlierCount))
+NumericPredictorWithOutlierCount <- nrow(OutlierCountSummary[OutlierCountSummary$OutlierCount>0,])
+print(paste0(NumericPredictorWithOutlierCount, " numeric variable(s) were noted with outlier(s)." ))
+
+##################################
+# Gathering descriptive statistics
+##################################
+(DPA_Skimmed <- skim(DPA.Predictors.Numeric))
+
+###################################
+# Verifying the data dimensions
+###################################
+dim(DPA.Predictors.Numeric)
+
+```
+
+</details>
+
+###  1.3.2 Zero and Near-Zero Variance
+|
+| **[A]** Low variance noted for 127 variables from the previous data quality assessment using a lower threshold.
+|
+| **[B]** Low variance noted for 3 variables using a preprocessing summary from the <mark style="background-color: #CCECFF">**caret**</mark> package. The <span style="color: #0000FF">nearZeroVar</span> method using both the <span style="color: #0000FF">freqCut</span> and <span style="color: #0000FF">uniqueCut</span> criteria set at 95/5 and 10, respectively, were applied on the dataset.
+|      **[B.1]** <span style="color: #FF0000">FP154</span> variable (factor)
+|      **[B.2]** <span style="color: #FF0000">FP199</span> variable (factor)
+|      **[B.3]** <span style="color: #FF0000">FP200</span> variable (factor)
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.3.2, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+DPA <- Solubility_Train
+
+##################################
+# Gathering descriptive statistics
+##################################
+(DPA_Skimmed <- skim(DPA))
+
+##################################
+# Identifying columns with low variance
+###################################
+DPA_LowVariance <- nearZeroVar(DPA,
+                               freqCut = 95/5,
+                               uniqueCut = 10,
+                               saveMetrics= TRUE)
+(DPA_LowVariance[DPA_LowVariance$nzv,])
+
+if ((nrow(DPA_LowVariance[DPA_LowVariance$nzv,]))==0){
+  
+  print("No low variance predictors noted.")
+  
+} else {
+
+  print(paste0("Low variance observed for ",
+               (nrow(DPA_LowVariance[DPA_LowVariance$nzv,])),
+               " numeric variable(s) with First.Second.Mode.Ratio>4 and Unique.Count.Ratio<0.10."))
+  
+  DPA_LowVarianceForRemoval <- (nrow(DPA_LowVariance[DPA_LowVariance$nzv,]))
+  
+  print(paste0("Low variance can be resolved by removing ",
+               (nrow(DPA_LowVariance[DPA_LowVariance$nzv,])),
+               " numeric variable(s)."))
+  
+  for (j in 1:DPA_LowVarianceForRemoval) {
+  DPA_LowVarianceRemovedVariable <- rownames(DPA_LowVariance[DPA_LowVariance$nzv,])[j]
+  print(paste0("Variable ",
+               j,
+               " for removal: ",
+               DPA_LowVarianceRemovedVariable))
+  }
+  
+  DPA %>%
+  skim() %>%
+  dplyr::filter(skim_variable %in% rownames(DPA_LowVariance[DPA_LowVariance$nzv,]))
+
+  ##################################
+  # Filtering out columns with low variance
+  #################################
+  DPA_ExcludedLowVariance <- DPA[,!names(DPA) %in% rownames(DPA_LowVariance[DPA_LowVariance$nzv,])]
+  
+  ##################################
+  # Gathering descriptive statistics
+  ##################################
+  (DPA_ExcludedLowVariance_Skimmed <- skim(DPA_ExcludedLowVariance))
+}
+
+###################################
+# Verifying the data dimensions
+###################################
+dim(DPA_ExcludedLowVariance)
+
+```
+
+</details>
+
+###  1.3.3 Collinearity
+|
+| **[A]** High correlation > 95% were noted for 2 variable pairs as confirmed using the preprocessing summaries from the <mark style="background-color: #CCECFF">**caret**</mark> and <mark style="background-color: #CCECFF">**lares**</mark> packages.
+|      **[A.1]** <span style="color: #FF0000">NumNonHAtoms</span> and <span style="color: #FF0000">NumNonHBonds</span> variables (numeric)
+|      **[A.2]** <span style="color: #FF0000">NumMultBonds</span> and <span style="color: #FF0000">NumAromaticBonds</span> variables (numeric)
+|      **[A.3]** <span style="color: #FF0000">NumAtoms</span> and <span style="color: #FF0000">NumBonds</span> variables (numeric)
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.3.3, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+DPA <- Solubility_Train
+
+##################################
+# Listing all predictors
+##################################
+DPA.Predictors <- DPA[,!names(DPA) %in% c("solTrainY")]
+
+##################################
+# Listing all numeric predictors
+##################################
+DPA.Predictors.Numeric <- DPA.Predictors[,-(grep("FP", names(DPA.Predictors)))]
+
+##################################
+# Visualizing pairwise correlation between predictors
+##################################
+DPA_CorrelationTest <- cor.mtest(DPA.Predictors.Numeric,
+                       method = "pearson",
+                       conf.level = .95)
+
+corrplot(cor(DPA.Predictors.Numeric,
+             method = "pearson",
+             use="pairwise.complete.obs"), 
+         method = "circle",
+         type = "upper", 
+         order = "original", 
+         tl.col = "black", 
+         tl.cex = 0.75,
+         tl.srt = 90, 
+         sig.level = 0.05, 
+         p.mat = DPA_CorrelationTest$p,
+         insig = "blank")
+
+
+
+##################################
+# Identifying the highly correlated variables
+##################################
+DPA_Correlation <-  cor(DPA.Predictors.Numeric, 
+                        method = "pearson",
+                        use="pairwise.complete.obs")
+(DPA_HighlyCorrelatedCount <- sum(abs(DPA_Correlation[upper.tri(DPA_Correlation)]) > 0.95))
+
+if (DPA_HighlyCorrelatedCount == 0) {
+  print("No highly correlated predictors noted.")
+} else {
+  print(paste0("High correlation observed for ",
+               (DPA_HighlyCorrelatedCount),
+               " pairs of numeric variable(s) with Correlation.Coefficient>0.95."))
+  
+  (DPA_HighlyCorrelatedPairs <- corr_cross(DPA.Predictors.Numeric,
+  max_pvalue = 0.05, 
+  top = DPA_HighlyCorrelatedCount,
+  rm.na = TRUE,
+  grid = FALSE
+))
+  
+}
+
+
+if (DPA_HighlyCorrelatedCount > 0) {
+  DPA_HighlyCorrelated <- findCorrelation(DPA_Correlation, cutoff = 0.95)
+  
+  (DPA_HighlyCorrelatedForRemoval <- length(DPA_HighlyCorrelated))
+  
+  print(paste0("High correlation can be resolved by removing ",
+               (DPA_HighlyCorrelatedForRemoval),
+               " numeric variable(s)."))
+  
+  for (j in 1:DPA_HighlyCorrelatedForRemoval) {
+  DPA_HighlyCorrelatedRemovedVariable <- colnames(DPA.Predictors.Numeric)[DPA_HighlyCorrelated[j]]
+  print(paste0("Variable ",
+               j,
+               " for removal: ",
+               DPA_HighlyCorrelatedRemovedVariable))
+  }
+  
+  ##################################
+  # Filtering out columns with high correlation
+  #################################
+  DPA_ExcludedHighCorrelation <- DPA[,-DPA_HighlyCorrelated]
+  
+  ##################################
+  # Gathering descriptive statistics
+  ##################################
+  (DPA_ExcludedHighCorrelation_Skimmed <- skim(DPA_ExcludedHighCorrelation))
+
+}
+
+###################################
+# Verifying the data dimensions
+###################################
+dim(DPA_ExcludedHighCorrelation)
+
+```
+
+</details>
+
+###  1.3.4 Linear Dependencies
+|
+| **[A]** Linear dependencies noted for 2 subsets of variables using the preprocessing summary from the <mark style="background-color: #CCECFF">**caret**</mark> package applying the <span style="color: #0000FF">findLinearCombos</span> method which utilizes the QR decomposition of a matrix to enumerate sets of linear combinations (if they exist). 
+|
+| **[B]** Subset 1
+|      **[B.1]** <span style="color: #FF0000">NumNonHBonds</span> variable (numeric)
+|      **[B.2]** <span style="color: #FF0000">NumAtoms</span> variable (numeric)
+|      **[B.3]** <span style="color: #FF0000">NumNonHAtoms</span> variable (numeric)
+|      **[B.3]** <span style="color: #FF0000">NumBonds</span> variable (numeric)
+|
+| **[C]** Subset 2
+|      **[C.1]** <span style="color: #FF0000">NumHydrogen</span> variable (numeric)
+|      **[C.2]** <span style="color: #FF0000">NumAtoms</span> variable (numeric)
+|      **[C.3]** <span style="color: #FF0000">NumNonHAtoms</span> variable (numeric)
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.3.4, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+DPA <- Solubility_Train
+
+##################################
+# Listing all predictors
+##################################
+DPA.Predictors <- DPA[,!names(DPA) %in% c("solTrainY")]
+
+##################################
+# Listing all numeric predictors
+##################################
+DPA.Predictors.Numeric <- DPA.Predictors[,sapply(DPA.Predictors, is.numeric)]
+
+##################################
+# Identifying the linearly dependent variables
+##################################
+DPA_LinearlyDependent <- findLinearCombos(DPA.Predictors.Numeric)
+
+(DPA_LinearlyDependentCount <- length(DPA_LinearlyDependent$linearCombos))
+
+if (DPA_LinearlyDependentCount == 0) {
+  print("No linearly dependent predictors noted.")
+} else {
+  print(paste0("Linear dependency observed for ",
+               (DPA_LinearlyDependentCount),
+               " subset(s) of numeric variable(s)."))
+  
+  for (i in 1:DPA_LinearlyDependentCount) {
+    DPA_LinearlyDependentSubset <- colnames(DPA.Predictors.Numeric)[DPA_LinearlyDependent$linearCombos[[i]]]
+    print(paste0("Linear dependent variable(s) for subset ",
+                 i,
+                 " include: ",
+                 DPA_LinearlyDependentSubset))
+  }
+  
+}
+
+##################################
+# Identifying the linearly dependent variables for removal
+##################################
+
+if (DPA_LinearlyDependentCount > 0) {
+  DPA_LinearlyDependent <- findLinearCombos(DPA.Predictors.Numeric)
+  
+  DPA_LinearlyDependentForRemoval <- length(DPA_LinearlyDependent$remove)
+  
+  print(paste0("Linear dependency can be resolved by removing ",
+               (DPA_LinearlyDependentForRemoval),
+               " numeric variable(s)."))
+  
+  for (j in 1:DPA_LinearlyDependentForRemoval) {
+  DPA_LinearlyDependentRemovedVariable <- colnames(DPA.Predictors.Numeric)[DPA_LinearlyDependent$remove[j]]
+  print(paste0("Variable ",
+               j,
+               " for removal: ",
+               DPA_LinearlyDependentRemovedVariable))
+  }
+  
+  ##################################
+  # Filtering out columns with linear dependency
+  #################################
+  DPA_ExcludedLinearlyDependent <- DPA[,-DPA_LinearlyDependent$remove]
+  
+  ##################################
+  # Gathering descriptive statistics
+  ##################################
+  (DPA_ExcludedLinearlyDependent_Skimmed <- skim(DPA_ExcludedLinearlyDependent))
+
+}
+
+###################################
+# Verifying the data dimensions
+###################################
+dim(DPA_ExcludedLinearlyDependent)
+
+```
+
+</details>
+
+###  1.3.5 Shape Transformation
+|
+| **[A]** A number of numeric variables in the dataset were observed to be right-skewed which required shape transformation for data distribution stability. Considering that all numeric variables were strictly positive values, the <span style="color: #0000FF">BoxCox</span> method from the <mark style="background-color: #CCECFF">**caret**</mark> package was used to transform their distributional shapes.
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.3.5, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+DPA <- Solubility_Train
+
+##################################
+# Listing all predictors
+##################################
+DPA.Predictors <- DPA[,!names(DPA) %in% c("solTrainY")]
+
+##################################
+# Listing all numeric predictors
+##################################
+DPA.Predictors.Numeric <- DPA.Predictors[,-(grep("FP", names(DPA.Predictors)))]
+
+##################################
+# Applying a Box-Cox transformation
+##################################
+DPA_BoxCox <- preProcess(DPA.Predictors.Numeric, method = c("BoxCox"))
+DPA_BoxCoxTransformed <- predict(DPA_BoxCox, DPA.Predictors.Numeric)
+
+##################################
+# Gathering descriptive statistics
+##################################
+(DPA_BoxCoxTransformedSkimmed <- skim(DPA_BoxCoxTransformed))
+
+###################################
+# Verifying the data dimensions
+###################################
+dim(DPA_BoxCoxTransformed)
+
+```
+
+</details>
+
+###  1.3.6 Centering and Scaling
+|
+| **[A]** To maintain numerical stability during modelling, centering and scaling transformations were applied on the transformed numeric variables. The <span style="color: #0000FF">center</span> method from the <mark style="background-color: #CCECFF">**caret**</mark> package was implemented which subtracts the average value of a numeric variable to all the values. As a result of centering, the variables had zero mean values. In addition, the <span style="color: #0000FF">scale</span> method, also from the <mark style="background-color: #CCECFF">**caret**</mark> package, was applied which performs a center transformation with each value of the variable divided by its standard deviation. Scaling the data coerced the values to have a common standard deviation of one.
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+
+```{r section_1.3.6, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+DPA <- Solubility_Train
+
+##################################
+# Listing all predictors
+##################################
+DPA.Predictors <- DPA[,!names(DPA) %in% c("solTrainY")]
+
+##################################
+# Listing all numeric predictors
+##################################
+DPA.Predictors.Numeric <- DPA.Predictors[,-(grep("FP", names(DPA.Predictors)))]
+
+##################################
+# Applying a Box-Cox transformation
+##################################
+DPA_BoxCox <- preProcess(DPA.Predictors.Numeric, method = c("BoxCox"))
+DPA_BoxCoxTransformed <- predict(DPA_BoxCox, DPA.Predictors.Numeric)
+
+##################################
+# Applying a center and scale data transformation
+##################################
+DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaled <- preProcess(DPA_BoxCoxTransformed, method = c("center","scale"))
+DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed <- predict(DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaled, DPA_BoxCoxTransformed)
+
+##################################
+# Gathering descriptive statistics
+##################################
+(DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformedSkimmed <- skim(DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed))
+
+###################################
+# Verifying the data dimensions
+###################################
+dim(DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed)
+
+```
+
+</details>
+
+###  1.3.7 Pre-Processed Dataset
+|
+| **[A]** 1267 rows (observations)
+|      **[A.1]** Train Set = 951 observations
+|      **[A.2]** Test Set = 316 observations
+| 
+| **[B]** 221 columns (variables)
+|      **[B.1]** 1/221 response = <span style="color: #FF0000">Class</span> variable (numeric)
+|      **[B.2]** 220/221 predictors = All remaining variables (205/220 factor + 15/220 numeric)
+| 
+| **[C]** Pre-processing actions applied:
+|      **[C.1]** Centering, scaling and shape transformation applied to improve data quality
+|      **[C.2]** No outlier treatment applied since the high values noted were contextually valid and sensible 
+|      **[C.3]** 3 predictors removed due to zero or near-zero variance 
+|      **[C.4]** 3 predictors removed due to high correlation
+|      **[C.5]** 2 predictors removed due to linear dependencies
+| 
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.3.7, warning=FALSE, message=FALSE}
+##################################
+# Creating the pre-modelling
+# train set
+##################################
+Log_Solubility <- DPA$solTrainY 
+PMA.Predictors.Factor   <- DPA.Predictors[,(grep("FP", names(DPA.Predictors)))]
+PMA.Predictors.Factor   <- as.data.frame(lapply(PMA.Predictors.Factor,factor))
+PMA.Predictors.Numeric  <- DPA.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed
+PMA_BoxCoxTransformed_CenteredScaledTransformed <- cbind(Log_Solubility,PMA.Predictors.Factor,PMA.Predictors.Numeric)
+
+##################################
+# Filtering out columns noted with data quality issues including
+# zero and near-zero variance,
+# high correlation and linear dependencies
+# to create the pre-modelling dataset
+##################################
+PMA_BoxCoxTransformed_CenteredScaledTransformed_ExcludedLowVariance_ExcludedLinearlyDependent_ExcludedHighCorrelation <- PMA_BoxCoxTransformed_CenteredScaledTransformed[,!names(PMA_BoxCoxTransformed_CenteredScaledTransformed) %in% c("FP154","FP199","FP200","NumNonHBonds","NumHydrogen","NumNonHAtoms","NumAromaticBonds","NumAtoms")]
+
+PMA_PreModelling_Train <- PMA_BoxCoxTransformed_CenteredScaledTransformed_ExcludedLowVariance_ExcludedLinearlyDependent_ExcludedHighCorrelation
+
+##################################
+# Gathering descriptive statistics
+##################################
+(PMA_PreModelling_Train_Skimmed <- skim(PMA_PreModelling_Train))
+
+###################################
+# Verifying the data dimensions
+# for the train set
+###################################
+dim(PMA_PreModelling_Train)
+
+##################################
+# Formulating the test set
+##################################
+DPA_Test <- Solubility_Test
+DPA_Test.Predictors <- DPA_Test[,!names(DPA_Test) %in% c("solTestY")]
+DPA_Test.Predictors.Numeric <- DPA_Test.Predictors[,-(grep("FP", names(DPA_Test.Predictors)))]
+DPA_Test_BoxCox <- preProcess(DPA_Test.Predictors.Numeric, method = c("BoxCox"))
+DPA_Test_BoxCoxTransformed <- predict(DPA_Test_BoxCox, DPA_Test.Predictors.Numeric)
+DPA_Test.Predictors.Numeric_BoxCoxTransformed_CenteredScaled <- preProcess(DPA_Test_BoxCoxTransformed, method = c("center","scale"))
+DPA_Test.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed <- predict(DPA_Test.Predictors.Numeric_BoxCoxTransformed_CenteredScaled, DPA_Test_BoxCoxTransformed)
+
+##################################
+# Creating the pre-modelling
+# train set
+##################################
+Log_Solubility <- DPA_Test$solTestY 
+PMA_Test.Predictors.Factor   <- DPA_Test.Predictors[,(grep("FP", names(DPA_Test.Predictors)))]
+PMA_Test.Predictors.Factor   <- as.data.frame(lapply(PMA_Test.Predictors.Factor,factor))
+PMA_Test.Predictors.Numeric  <- DPA_Test.Predictors.Numeric_BoxCoxTransformed_CenteredScaledTransformed
+PMA_Test_BoxCoxTransformed_CenteredScaledTransformed <- cbind(Log_Solubility,PMA_Test.Predictors.Factor,PMA_Test.Predictors.Numeric)
+PMA_Test_BoxCoxTransformed_CenteredScaledTransformed_ExcludedLowVariance_ExcludedLinearlyDependent_ExcludedHighCorrelation <- PMA_Test_BoxCoxTransformed_CenteredScaledTransformed[,!names(PMA_Test_BoxCoxTransformed_CenteredScaledTransformed) %in% c("FP154","FP199","FP200","NumNonHBonds","NumHydrogen","NumNonHAtoms","NumAromaticBonds","NumAtoms")]
+
+PMA_PreModelling_Test <- PMA_Test_BoxCoxTransformed_CenteredScaledTransformed_ExcludedLowVariance_ExcludedLinearlyDependent_ExcludedHighCorrelation
+
+##################################
+# Gathering descriptive statistics
+##################################
+(PMA_PreModelling_Test_Skimmed <- skim(PMA_PreModelling_Test))
+
+###################################
+# Verifying the data dimensions
+# for the test set
+###################################
+dim(PMA_PreModelling_Test)
+
+```
+
+</details>
+
+## 1.4 Data Exploration
+|
+| **[A]** Numeric variables which demonstrated linear or non-linear relationships with the <span style="color: #FF0000">Log_Solubility</span> response variable include:
+|      **[A.1]** <span style="color: #FF0000">MolWeight</span> variable (numeric)
+|      **[A.2]** <span style="color: #FF0000">NumCarbon</span> variable (numeric)
+|      **[A.3]** <span style="color: #FF0000">NumChlorine</span> variable (numeric)
+|      **[A.4]** <span style="color: #FF0000">NumHalogen</span> variable (numeric)
+|      **[A.5]** <span style="color: #FF0000">NumMultBonds</span> variable (numeric)
+|
+| **[B]** Factor variables which demonstrated relatively better differentiation of the <span style="color: #FF0000">Log_Solubility</span> response variable between its <span style="color: #FF0000">1</span> and <span style="color: #FF0000">0</span> structure levels include:
+|      **[B.1]** <span style="color: #FF0000">FP207</span> variable (factor)
+|      **[B.2]** <span style="color: #FF0000">FP190</span> variable (factor)
+|      **[B.3]** <span style="color: #FF0000">FP197</span> variable (factor)
+|      **[B.4]** <span style="color: #FF0000">FP196</span> variable (factor)
+|      **[B.5]** <span style="color: #FF0000">FP193</span> variable (factor)
+|      **[B.6]** <span style="color: #FF0000">FP184</span> variable (factor)
+|      **[B.7]** <span style="color: #FF0000">FP172</span> variable (factor)
+|      **[B.8]** <span style="color: #FF0000">FP149</span> variable (factor)
+|      **[B.9]** <span style="color: #FF0000">FP112</span> variable (factor)
+|      **[B.10]** <span style="color: #FF0000">FP107</span> variable (factor)
+|      **[B.11]** <span style="color: #FF0000">FP089</span> variable (factor)
+|      **[B.12]** <span style="color: #FF0000">FP076</span> variable (factor)
+|      **[B.13]** <span style="color: #FF0000">FP059</span> variable (factor)
+|      **[B.14]** <span style="color: #FF0000">FP049</span> variable (factor)
+|      **[B.15]** <span style="color: #FF0000">FP044</span> variable (factor)
+|      **[B.16]** <span style="color: #FF0000">FP014</span> variable (factor)
+|      **[B.17]** <span style="color: #FF0000">FP013</span> variable (factor)
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.4, warning=FALSE, message=FALSE}
+##################################
+# Loading dataset
+##################################
+EDA <- PMA_PreModelling_Train
+
+##################################
+# Listing all predictors
+##################################
+EDA.Predictors <- EDA[,!names(EDA) %in% c("Log_Solubility")]
+
+##################################
+# Listing all numeric predictors
+##################################
+EDA.Predictors.Numeric <- EDA.Predictors[,sapply(EDA.Predictors, is.numeric)]
+ncol(EDA.Predictors.Numeric)
+names(EDA.Predictors.Numeric)
+
+##################################
+# Listing all factor predictors
+##################################
+EDA.Predictors.Factor <- EDA.Predictors[,sapply(EDA.Predictors, is.factor)]
+ncol(EDA.Predictors.Factor)
+names(EDA.Predictors.Factor)
+
+##################################
+# Formulating the scatter plots
+##################################
+featurePlot(x = EDA.Predictors.Numeric, 
+            y = EDA$Log_Solubility,
+            between = list(x = 1, y = 1),
+            type = c("g", "p", "smooth"),
+            labels = rep("", 2))
+
+##################################
+# Restructuring the dataset for
+# for boxplot analysis
+##################################
+Log_Solubility <- DPA$solTrainY
+EDA.Boxplot.Source <- cbind(Log_Solubility,
+                     EDA.Predictors.Factor)
+
+
+EDA.Boxplot.Gathered.Group1 <- gather(EDA.Boxplot.Source,
+                                      'FP001','FP002','FP003','FP004','FP005',
+                                      'FP006','FP007','FP008','FP009','FP010',
+                                      'FP011','FP012','FP013','FP014','FP015',
+                                      'FP016','FP017','FP018','FP019','FP020',
+                                      'FP021','FP022','FP023','FP024','FP025',
+                                      'FP026','FP027','FP028','FP029','FP030',
+                                      'FP031','FP032','FP033','FP034','FP035',
+                                      'FP036','FP037','FP038','FP039','FP040',
+                                      key="Descriptor",
+                                      value="Structure")
+
+EDA.Boxplot.Gathered.Group2 <- gather(EDA.Boxplot.Source,
+                                      'FP041','FP042','FP043','FP044','FP045',
+                                      'FP046','FP047','FP048','FP049','FP050',
+                                      'FP051','FP052','FP053','FP054','FP055',
+                                      'FP056','FP057','FP058','FP059','FP060',
+                                      'FP061','FP062','FP063','FP064','FP065',
+                                      'FP066','FP067','FP068','FP069','FP070',
+                                      'FP071','FP072','FP073','FP074','FP075',
+                                      'FP076','FP077','FP078','FP079','FP080',
+                                      key="Descriptor",
+                                      value="Structure")
+
+EDA.Boxplot.Gathered.Group3 <- gather(EDA.Boxplot.Source,
+                                      'FP081','FP082','FP083','FP084','FP085',
+                                      'FP086','FP087','FP088','FP089','FP090',
+                                      'FP091','FP092','FP093','FP094','FP095',
+                                      'FP096','FP097','FP098','FP099','FP100',
+                                      'FP101','FP102','FP103','FP104','FP105',
+                                      'FP106','FP107','FP108','FP109','FP110',
+                                      'FP111','FP112','FP113','FP114','FP115',
+                                      'FP116','FP117','FP118','FP119','FP120',
+                                      key="Descriptor",
+                                      value="Structure")
+
+EDA.Boxplot.Gathered.Group4 <- gather(EDA.Boxplot.Source,
+                                      'FP121','FP122','FP123','FP124','FP125',
+                                      'FP126','FP127','FP128','FP129','FP130',
+                                      'FP131','FP132','FP133','FP134','FP135',
+                                      'FP136','FP137','FP138','FP139','FP140',
+                                      'FP141','FP142','FP143','FP144','FP145',
+                                      'FP146','FP147','FP148','FP149','FP150',
+                                      'FP151','FP152','FP153','FP155','FP156',
+                                      'FP157','FP158','FP159','FP160','FP161',
+                                      key="Descriptor",
+                                      value="Structure")
+
+EDA.Boxplot.Gathered.Group5 <- gather(EDA.Boxplot.Source,
+                                      'FP162','FP163','FP164','FP165','FP166',
+                                      'FP167','FP168','FP169','FP170','FP171',
+                                      'FP172','FP173','FP174','FP175','FP176',
+                                      'FP177','FP178','FP179','FP180','FP181',
+                                      'FP182','FP183','FP184','FP185','FP186',
+                                      'FP187','FP188','FP189','FP190','FP191',
+                                      'FP192','FP193','FP194','FP195','FP196',
+                                      'FP197','FP198','FP201','FP202','FP203',
+                                      'FP204','FP205','FP206','FP207','FP208',
+                                      key="Descriptor",
+                                      value="Structure")
+
+bwplot(Log_Solubility~Structure|Descriptor,
+       data=EDA.Boxplot.Gathered.Group5,
+       ylab="Log Solubility",
+       xlab="Structure",
+       layout=(c(9,5)))
+
+bwplot(Log_Solubility~Structure|Descriptor,
+       data=EDA.Boxplot.Gathered.Group4,
+       ylab="Log Solubility",
+       xlab="Structure",
+       layout=(c(9,5)))
+
+bwplot(Log_Solubility~Structure|Descriptor,
+       data=EDA.Boxplot.Gathered.Group3,
+       ylab="Log Solubility",
+       xlab="Structure",
+       layout=(c(9,5)))
+
+bwplot(Log_Solubility~Structure|Descriptor,
+       data=EDA.Boxplot.Gathered.Group2,
+       ylab="Log Solubility",
+       xlab="Structure",
+       layout=(c(9,5)))
+
+bwplot(Log_Solubility~Structure|Descriptor,
+       data=EDA.Boxplot.Gathered.Group1,
+       ylab="Log Solubility",
+       xlab="Structure",
+       layout=(c(9,5)))
+
+```
+
+</details>
+
+## 1.5 Model-Independent Feature Importance Metrics
+
+###  1.5.1 Locally Weighted Scatterplot Smoothing Pseudo-R-Squared (LOWESS_PR)
+|
+| [Locally Weighted Scatterplot Smoothing Pseudo-R-Squared](https://www.tandfonline.com/doi/abs/10.1080/01621459.1979.10481038) computes the R-squared statistic - a goodness-of-fit measure which represents explained variability, improvement from null to fitted model and square of the correlation on predicted values obtained from a locally weighted scatterplot smoothing process. LOWESS consists of computing a series of local linear regressions, with each local regression restricted to a window of x-values. Smoothness is achieved by using overlapping windows and by gradually down-weighting points in each regression according to their distance from the anchor point of the window (tri-cube weighting).
+|
+| **[A]** The locally weighted scatterplot smoothing pseudo-r-squared statistic was obtained using the <mark style="background-color: #CCECFF">**caret**</mark> package. High raw values of the metric indicate that the numeric predictors were associated with the numeric response.
+|
+| **[B]** The numeric predictors which demonstrated the best feature importance in terms of this metric are as follows:
+|      **[B.1]** <span style="color: #FF0000">MolWeight</span> = 0.44437
+|      **[B.2]** <span style="color: #FF0000">NumCarbon</span> = 0.36580
+|      **[B.3]** <span style="color: #FF0000">NumMultBonds</span> = 0.27588
+|      **[B.4]** <span style="color: #FF0000">NumHalogen</span> = 0.25415
+|      **[B.5]** <span style="color: #FF0000">NumChlorine</span> = 0.25407
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.5.1, warning=FALSE, message=FALSE}
+##################################
+# Filtering in the numeric predictors
+# with the numeric response variable
+##################################
+PMA_PreModelling_Train_Numeric <- PMA_PreModelling_Train[,!grepl("FP", names(PMA_PreModelling_Train))]
+dim(PMA_PreModelling_Train_Numeric)
+str(PMA_PreModelling_Train_Numeric)
+summary(PMA_PreModelling_Train_Numeric)
+
+##################################
+# Obtaining the LOWESS pseudo-R-Squared
+##################################
+LOWESS_PR <- filterVarImp(x = PMA_PreModelling_Train_Numeric[, 2:ncol(PMA_PreModelling_Train_Numeric)],
+                          y = PMA_PreModelling_Train_Numeric$Log_Solubility,
+                          nonpara = TRUE)
+
+##################################
+# Formulating the summary table
+##################################
+LOWESS_PR_Summary <- LOWESS_PR 
+
+LOWESS_PR_Summary$Predictor <- rownames(LOWESS_PR)
+names(LOWESS_PR_Summary)[1] <- "LOWESS_PR"
+LOWESS_PR_Summary$Metric <- rep("LOWESS_PR",nrow(LOWESS_PR))
+
+LOWESS_PR_Summary
+
+##################################
+# Exploring predictor performance
+##################################
+dotplot(Predictor ~ LOWESS_PR | Metric, 
+        LOWESS_PR_Summary,
+        origin = 0,
+        type = c("p", "h"),
+        pch = 16,
+        cex = 2,
+        alpha = 0.45,
+        prepanel = function(x, y) {
+            list(ylim = levels(reorder(y, x)))
+        },
+        panel = function(x, y, ...) {
+            panel.dotplot(x, reorder(y, x), ...)
+        })
+```
+
+</details>
+
+###  1.5.2 Pearson's Correlation Coefficient (PCC)
+|
+| [Pearson's Correlation Coefficient](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) is a parametric measure of the linear correlation for a pair of features by calculating the ratio between their covariance and the product of their standard deviations. The presence of high absolute correlation values indicate the univariate association between the numeric predictors and the numeric response.
+|
+| **[A]** The Pearson's correlation coefficient was obtained using the <mark style="background-color: #CCECFF">**stats**</mark> package. High absolute values of the metric indicate that the numeric predictors were associated with the numeric response.
+|
+| **[B]** The numeric predictors which demonstrated the best feature importance in terms of this metric are as follows:
+|      **[B.1]** <span style="color: #FF0000">MolWeight</span> = 0.65849
+|      **[B.2]** <span style="color: #FF0000">NumCarbon</span> = 0.60481
+|      **[B.3]** <span style="color: #FF0000">NumMultBonds</span> = 0.52525
+|      **[B.4]** <span style="color: #FF0000">NumHalogen</span> = 0.50414
+|      **[B.5]** <span style="color: #FF0000">NumChlorine</span> = 0.50405
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.5.2, warning=FALSE, message=FALSE}
+##################################
+# Obtaining the Pearson correlation coefficient
+##################################
+PCC <- abs(cor(PMA_PreModelling_Train_Numeric, method="pearson")[-1,1])
+
+##################################
+# Formulating the summary table
+##################################
+PCC_Summary <- data.frame(Predictor = names(PMA_PreModelling_Train_Numeric)[2:ncol(PMA_PreModelling_Train_Numeric)],
+                          PCC = PCC,
+                          Metric = rep("PCC", length(PCC)))
+
+PCC_Summary
+
+##################################
+# Exploring predictor performance
+##################################
+dotplot(Predictor ~ PCC | Metric, 
+        PCC_Summary,
+        origin = 0,
+        type = c("p", "h"),
+        pch = 16,
+        cex = 2,
+        alpha = 0.45,
+        prepanel = function(x, y) {
+            list(ylim = levels(reorder(y, x)))
+        },
+        panel = function(x, y, ...) {
+            panel.dotplot(x, reorder(y, x), ...)
+        })
+```
+
+</details>
+
+###  1.5.3 Spearman's Rank Correlation Coefficient (SRCC)
+|
+| [Spearman's Rank Correlation Coefficient](https://www.jstor.org/stable/1412159?origin=crossref) is a non-parametric measure of the linear correlation for a pair of features by applying the Spearman's rank equation to the sum of the  squared differences between their ranks. The presence of high absolute correlation values indicate the univariate association between the numeric predictors and the numeric response.
+|
+| **[A]** The Spearman's correlation coefficient was obtained using the <mark style="background-color: #CCECFF">**stats**</mark> package. High absolute values of the metric indicate that the numeric predictors were associated with the numeric response.
+|
+| **[B]** The numeric predictors which demonstrated the best feature importance in terms of this metric are as follows:
+|      **[B.1]** <span style="color: #FF0000">MolWeight</span> = 0.68530
+|      **[B.2]** <span style="color: #FF0000">NumCarbon</span> = 0.67359
+|      **[B.3]** <span style="color: #FF0000">NumBonds</span> = 0.54840
+|      **[B.4]** <span style="color: #FF0000">NumRings</span> = 0.50942
+|      **[B.5]** <span style="color: #FF0000">NumMultBonds</span> = 0.47971
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.5.3, warning=FALSE, message=FALSE}
+##################################
+# Obtaining the Spearman correlation coefficient
+##################################
+SRCC <- abs(cor(PMA_PreModelling_Train_Numeric, method="spearman")[-1,1])
+
+##################################
+# Formulating the summary table
+##################################
+SRCC_Summary <- data.frame(Predictor = names(PMA_PreModelling_Train_Numeric)[2:ncol(PMA_PreModelling_Train_Numeric)],
+                          SRCC = SRCC,
+                          Metric = rep("SRCC", length(SRCC)))
+
+SRCC_Summary
+
+##################################
+# Exploring predictor performance
+##################################
+dotplot(Predictor ~ SRCC | Metric, 
+        SRCC_Summary,
+        origin = 0,
+        type = c("p", "h"),
+        pch = 16,
+        cex = 2,
+        alpha = 0.45,
+        prepanel = function(x, y) {
+            list(ylim = levels(reorder(y, x)))
+        },
+        panel = function(x, y, ...) {
+            panel.dotplot(x, reorder(y, x), ...)
+        })
+```
+
+</details>
+
+###  1.5.4 Maximal Information Coefficient (MIC)
+|
+| [Maximal Information Coefficient](https://www.science.org/doi/10.1126/science.1205438) is an information theory-based measure of two-variable dependence through the computation of the mutual information normalized by the minimum joint entropy. It evaluates the strength of linear or non-linear association using binning as a means to apply mutual information between continuous random variables and selecting the maximum over many possible grids. The presence of high coefficient values indicate the univariate association between the numeric predictors and the numeric response.
+|
+| **[A]** The maximal information coefficient was obtained using the <mark style="background-color: #CCECFF">**minerva**</mark> package. High raw values of the metric indicate that the numeric predictors were associated with the numeric response.
+|
+| **[B]** The numeric predictors which demonstrated the best feature importance in terms of this metric are as follows:
+|      **[B.1]** <span style="color: #FF0000">MolWeight</span> = 0.46793
+|      **[B.2]** <span style="color: #FF0000">NumCarbon</span> = 0.44341
+|      **[B.3]** <span style="color: #FF0000">NumBonds</span> = 0.32687
+|      **[B.4]** <span style="color: #FF0000">HydrophilicFactor</span> = 0.32085
+|      **[B.5]** <span style="color: #FF0000">NumRings</span> = 0.31618
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.5.4, warning=FALSE, message=FALSE}
+##################################
+# Obtaining the maximal information coefficient
+##################################
+MIC <- mine(x = PMA_PreModelling_Train_Numeric[, 2:ncol(PMA_PreModelling_Train_Numeric)],
+            y = PMA_PreModelling_Train_Numeric$Log_Solubility)$MIC
+
+##################################
+# Formulating the summary table
+##################################
+MIC_Summary <- data.frame(Predictor = names(PMA_PreModelling_Train_Numeric)[2:ncol(PMA_PreModelling_Train_Numeric)],
+                          MIC = MIC[,1],
+                          Metric = rep("MIC", length(MIC)))
+
+MIC_Summary
+
+##################################
+# Exploring predictor performance
+##################################
+dotplot(Predictor ~ MIC | Metric, 
+        MIC_Summary,
+        origin = 0,
+        type = c("p", "h"),
+        pch = 16,
+        cex = 2,
+        alpha = 0.45,
+        prepanel = function(x, y) {
+            list(ylim = levels(reorder(y, x)))
+        },
+        panel = function(x, y, ...) {
+            panel.dotplot(x, reorder(y, x), ...)
+        })
+```
+
+</details>
+
+###  1.5.5 Relief Values (RV)
+|
+| [Relief Values](https://link.springer.com/article/10.1023/A:1025667309714) are heuristic measures which estimate the quality of variables according to how well their values compare to instances that are near to each other, but are efficient in detecting contextual information even with strong dependencies between attributes. Random instances and the corresponding K-nearest instances are selected, with the the weights for the different prediction values, different attributes and different prediction consolidated. The rank of the instance in a sequence of instances ordered by the distance is taken into account based on a a user-defined parameter controlling the influence of the distance. The contributions of each K-nearest instances are normalized by dividing the results with the sum of all K contributions. The presence of high relief values indicate the univariate association between the numeric predictors and the numeric response.
+|
+| **[A]** The relief values statistic was obtained using the <mark style="background-color: #CCECFF">**CORElearn**</mark> package. High raw values of the metric indicate that the numeric predictors were associated with the numeric response.
+|
+| **[B]** The numeric predictors which demonstrated the best feature importance in terms of this metric are as follows:
+|      **[B.1]** <span style="color: #FF0000">NumNitrogen</span> = 0.11583
+|      **[B.2]** <span style="color: #FF0000">NumOxygen</span> = 0.10808
+|      **[B.3]** <span style="color: #FF0000">MolWeight</span> = 0.10335
+|      **[B.4]** <span style="color: #FF0000">NumMultBonds</span> = 0.06807
+|      **[B.5]** <span style="color: #FF0000">SurfaceArea2</span> = 0.06623
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.5.5, warning=FALSE, message=FALSE}
+##################################
+# Obtaining the relief values
+##################################
+RV <- attrEval(Log_Solubility ~ .,  
+               data = PMA_PreModelling_Train_Numeric,
+               estimator = "RReliefFequalK")
+
+##################################
+# Formulating the summary table
+##################################
+RV_Summary <- data.frame(Predictor = names(RV),
+                         RV = RV,
+                         Metric = rep("RV", length(RV)))
+
+RV_Summary
+
+##################################
+# Exploring predictor performance
+##################################
+dotplot(Predictor ~ RV | Metric, 
+        RV_Summary,
+        origin = 0,
+        type = c("p", "h"),
+        pch = 16,
+        cex = 2,
+        alpha = 0.45,
+        prepanel = function(x, y) {
+            list(ylim = levels(reorder(y, x)))
+        },
+        panel = function(x, y, ...) {
+            panel.dotplot(x, reorder(y, x), ...)
+        })
+```
+
+</details>
+
+###  1.5.6 Volcano Plot - T-Test (VP_T)
+|
+| [T-Test P-Values](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) define the probability of obtaining an effect during hypothesis testing, at least as large as the one actually observed in the sample data, specifically assuming that the null hypothesis is true. The test of hypothesis involved applying T-Test to evaluate for any significant differences in the means of the numeric response between two categorical predictors. The presence of low T-Test p-values indicate the univariate discrimination of the categorical predictors in terms of the numeric response.
+|
+| **[A]** The volcano plot - t-Test p-value was obtained using the <mark style="background-color: #CCECFF">**stats**</mark> package. High raw values of the negative logarithm of the metric, and the absolute difference between group means indicate that the factor predictors were associated with the numeric response.
+|
+| **[B]** The factor predictors which demonstrated the best feature importance in terms of the negative logarithm of the t-Test p-value are as follows:
+|      **[B.1]** <span style="color: #FF0000">FP076</span> = 56.66337
+|      **[B.2]** <span style="color: #FF0000">FP089</span> = 41.12150
+|      **[B.3]** <span style="color: #FF0000">FP065</span> = 38.13254
+|      **[B.4]** <span style="color: #FF0000">FP168</span> = 33.20049
+|      **[B.5]** <span style="color: #FF0000">FP079</span> = 31.58345
+|
+| **[C]** The factor predictors which demonstrated the best feature importance in terms of the absolute difference between group means are as follows:
+|      **[C.1]** <span style="color: #FF0000">FP044</span> = 4.10986
+|      **[C.2]** <span style="color: #FF0000">FP193</span> = 3.11773
+|      **[C.3]** <span style="color: #FF0000">FP184</span> = 2.67768
+|      **[C.4]** <span style="color: #FF0000">FP149</span> = 2.64671
+|      **[C.5]** <span style="color: #FF0000">FP172</span> = 2.46454
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.5.6, warning=FALSE, message=FALSE}
+##################################
+# Filtering in the factor predictors
+# with the numeric response variable
+##################################
+PMA_PreModelling_Train_Factor <- PMA_PreModelling_Train[,grepl("FP", names(PMA_PreModelling_Train))]
+PMA_PreModelling_Train_Factor$Log_Solubility <- PMA_PreModelling_Train$Log_Solubility
+dim(PMA_PreModelling_Train_Factor)
+str(PMA_PreModelling_Train_Factor)
+summary(PMA_PreModelling_Train_Factor)
+
+##################################
+# Obtaining the t-test statistics
+##################################
+VP_T <- apply(PMA_PreModelling_Train_Factor[, 1:(ncol(PMA_PreModelling_Train_Factor)-1)],
+              2,
+              function(x, y){
+                tStats <- t.test(y ~ x)[c("statistic", "p.value", "estimate")]
+                unlist(tStats)},
+              y=PMA_PreModelling_Train_Factor$Log_Solubility)
+
+##################################
+# Formulating the summary table
+##################################
+VP_T_Summary <- as.data.frame(t(VP_T))
+names(VP_T_Summary) <- c("t.Statistic", "t.Test_P.Value", "Mean0", "Mean1")
+VP_T_Summary$MeanDifference <- VP_T_Summary$Mean1 - VP_T_Summary$Mean0
+VP_T_Summary$Predictor <- names(PMA_PreModelling_Train_Factor[,-ncol(PMA_PreModelling_Train_Factor)])
+VP_T_Summary$Metric <- rep("VP_T", nrow(VP_T_Summary))
+VP_T_Summary$NegativeLog10_t.Test_P.Value <- -log10(VP_T_Summary$t.Test_P.Value)
+VP_T_Summary$AbsoluteMeanDifference <- abs(VP_T_Summary$Mean1 - VP_T_Summary$Mean0)
+
+VP_T_Summary$Group <- ifelse(rownames(VP_T_Summary)=="FP076","FP076",
+                             ifelse(rownames(VP_T_Summary)=="FP089","FP089",
+                                    ifelse(rownames(VP_T_Summary)=="FP065","FP065",
+                                           ifelse(rownames(VP_T_Summary)=="FP044","FP044",
+                                                  ifelse(rownames(VP_T_Summary)=="FP193","FP193",
+                                                         "Others")))))
+
+VP_T_Summary
+
+##################################
+# Selecting the best-performing
+# predictors based from metrics
+##################################
+VP_T_Summary_Top15_TTestPValue <- VP_T_Summary[order(VP_T_Summary$NegativeLog10_t.Test_P.Value,decreasing=TRUE),]
+(VP_T_Summary_Top15_TTestPValue <- VP_T_Summary_Top15_TTestPValue[1:15,])
+
+VP_T_Summary_Top15_AbsoluteMeanDifference <- VP_T_Summary[order(VP_T_Summary$AbsoluteMeanDifference,decreasing=TRUE),]
+(VP_T_Summary_Top15_AbsoluteMeanDifference <- VP_T_Summary_Top15_AbsoluteMeanDifference[1:15,])
+
+##################################
+# Exploring predictor performance
+##################################
+dotplot(Predictor ~ NegativeLog10_t.Test_P.Value | Metric, 
+        VP_T_Summary_Top15_TTestPValue,
+        origin = 0,
+        xlab = "-Log10(T-Test P-Value)",
+        type = c("p", "h"),
+        pch = 16,
+        cex = 2,
+        alpha = 0.45,
+        prepanel = function(x, y) {
+            list(ylim = levels(reorder(y, x)))
+        },
+        panel = function(x, y, ...) {
+            panel.dotplot(x, reorder(y, x), ...)
+        })
+
+dotplot(Predictor ~ AbsoluteMeanDifference | Metric, 
+        VP_T_Summary_Top15_AbsoluteMeanDifference,
+        origin = 0,
+        xlab = "Absolute (Mean With Structure - Mean Without Structure)",
+        type = c("p", "h"),
+        pch = 16,
+        cex = 2,
+        alpha = 0.45,
+        prepanel = function(x, y) {
+            list(ylim = levels(reorder(y, x)))
+        },
+        panel = function(x, y, ...) {
+            panel.dotplot(x, reorder(y, x), ...)
+        })
+
+```
+
+</details>
+
+## 1.6 Consolidated Findings
+|
+| **[A]** The model-independent feature importance for all numeric predictors were evaluated in terms of the following metrics:
+|      **[A.1]** **LOWESS_PR: Locally Weighted Scatterplot Smoothing Pseudo-R-Squared** (<mark style="background-color: #CCECFF">**caret**</mark> package)
+|      **[A.2]** **PCC: Pearson's Correlation Coefficient** (<mark style="background-color: #CCECFF">**stats**</mark> package)
+|      **[A.3]** **SRCC: Spearman’s Rank Correlation Coefficient** (<mark style="background-color: #CCECFF">**stats**</mark> package)
+|      **[A.4]** **MIC: Maximal Information Coefficient** (<mark style="background-color: #CCECFF">**minerva**</mark> package) 
+|      **[A.5]** **RV: Relief Values** (<mark style="background-color: #CCECFF">**CORElearn**</mark> package) 
+|
+| **[B]** The numeric predictors which demonstrated the most consistent feature importance across the given metrics are as follows:
+|      **[B.1]** <span style="color: #FF0000">MolWeight</span>
+|      **[B.2]** <span style="color: #FF0000">NumCarbon</span>
+|      **[B.3]** <span style="color: #FF0000">NumMultBonds</span>
+|      **[B.4]** <span style="color: #FF0000">NumHalogen</span>
+|      **[B.5]** <span style="color: #FF0000">NumRings</span>
+|
+| **[C]** The model-independent feature importance for all factor predictors were evaluated in terms of the following metrics:
+|      **[C.1]** **VP_T: Volcano Plot - T-Test** (<mark style="background-color: #CCECFF">**stats**</mark> package)
+|
+| **[D]** The factor predictors which demonstrated the most consistent feature importance across the given metrics are as follows:
+|      **[D.1]** <span style="color: #FF0000">FP076</span>
+|      **[D.2]** <span style="color: #FF0000">FP044</span>
+|      **[D.3]** <span style="color: #FF0000">FP089</span>
+|      **[D.4]** <span style="color: #FF0000">FP193</span>
+|      **[D.5]** <span style="color: #FF0000">FP065</span>
+|
+|
+
+<details><summary><mark style="background-color: #000000;color: #FFFFFF">**Code Chunk | Output**</mark></summary>
+
+```{r section_1.6, warning=FALSE, message=FALSE}
+##################################
+# Consolidating all performance metrics
+# for the numeric predictors
+##################################
+NumericPredictor_Metrics <- cbind(LOWESS_PR_Summary$LOWESS_PR,
+                                  PCC_Summary$PCC,
+                                  SRCC_Summary$SRCC,
+                                  MIC_Summary$MIC,
+                                  RV_Summary$RV)
+
+colnames(NumericPredictor_Metrics) <- c("LOWESS_PR",
+                                        "PCC",
+                                        "SRCC",
+                                        "MIC",
+                                        "RV")
+
+rownames(NumericPredictor_Metrics) <- names(PMA_PreModelling_Train_Numeric)[2:ncol(PMA_PreModelling_Train_Numeric)]
+
+NumericPredictor_Metrics <- as.data.frame(NumericPredictor_Metrics)
+
+NumericPredictor_Metrics$Group <- ifelse(rownames(NumericPredictor_Metrics)=="MolWeight","MolWeight",
+                                         ifelse(rownames(NumericPredictor_Metrics)=="NumCarbon","NumCarbon",
+                                                ifelse(rownames(NumericPredictor_Metrics)=="NumMultBonds","NumMultBonds",
+                                                       ifelse(rownames(NumericPredictor_Metrics)=="NumHalogen","NumHalogen",
+                                                              ifelse(rownames(NumericPredictor_Metrics)=="NumRings","NumRings",
+                                                                     "Others")))))
+
+NumericPredictor_Metrics
+
+splom(~NumericPredictor_Metrics[,c(1:5)],
+      groups = NumericPredictor_Metrics$Group,
+      pch = 16,
+      cex = 2,
+      alpha = 0.45,
+      varnames = c("LOWESS_PR", "PCC", "SRCC", "MIC", "RV"),
+      auto.key = list(points = TRUE, space = "top"),
+      main = "Feature Importance Comparison for Numeric Predictors",
+      xlab = "Scatterplot Matrix of Feature Importance Metrics" )
+
+
+##################################
+# Consolidating all performance metrics
+# for the factor predictors
+##################################
+TTEST_P.Value_Plot <- xyplot(NegativeLog10_t.Test_P.Value ~ MeanDifference,
+       groups = VP_T_Summary$Group,
+       data = VP_T_Summary,
+       xlab = "Mean With Structure - Mean Without Structure",
+       ylab = "-Log10(T-Test P-Value)",
+       type = "p",
+       pch = 16,
+       cex = 2,
+       alpha = 0.45,
+       auto.key = list(points = TRUE, space = "top"),
+       main = "Feature Importance Comparison for Numeric Predictors")
+
+grid.arrange(TTEST_P.Value_Plot, 
+             ncol = 2) 
+
+```
+
+</details>
+|
+# **2. Summary** <a name="summary"></a>
+|
+| ![](D:/Github_Codes/ProjectPortfolio/Portfolio_Project_15/docs/Project15_Summary.png)
+|
+# **3. References**
+|
+| **[Book]** [Applied Predictive Modeling](http://appliedpredictivemodeling.com/) by Max Kuhn and Kjell Johnson
+| **[Book]** [An Introduction to Statistical Learning](https://www.statlearning.com/) by Gareth James, Daniela Witten, Trevor Hastie and Rob Tibshirani
+| **[Book]** [Multivariate Data Visualization with R](http://lmdvr.r-forge.r-project.org/figures/figures.html) by Deepayan Sarkar
+| **[Book]** [Machine Learning](https://bookdown.org/ssjackson300/Machine-Learning-Lecture-Notes/) by Samuel Jackson
+| **[Book]** [Data Modeling Methods](https://bookdown.org/larget_jacob/data-modeling-methods/) by Jacob Larget
+| **[Book]** [Introduction to R](https://biocorecrg.github.io/CRG_RIntroduction/) by Sara Bonnin
+| **[R Package]** [AppliedPredictiveModeling](https://cran.r-project.org/web//packages/AppliedPredictiveModeling/AppliedPredictiveModeling.pdf) by Max Kuhn
+| **[R Package]** [caret](https://topepo.github.io/caret/index.html) by Max Kuhn
+| **[R Package]** [rpart](https://mran.microsoft.com/web/packages/rpart/rpart.pdf) by Terry Therneau and Beth Atkinson
+| **[R Package]** [lattice](https://cran.r-project.org/web/packages/lattice/lattice.pdf) by  Deepayan Sarkar
+| **[R Package]** [dplyr](https://cran.r-project.org/web/packages/dplyr/index.html/) by Hadley Wickham
+| **[R Package]** [moments](https://cran.r-project.org/web/packages/moments/index.html) by Lukasz Komsta and Frederick
+| **[R Package]** [skimr](https://cran.r-project.org/web/packages/skimr/skimr.pdf) by  Elin Waring
+| **[R Package]** [RANN](https://cran.r-project.org/web/packages/RANN/RANN.pdf) by  Sunil Arya, David Mount, Samuel Kemp and Gregory Jefferis
+| **[R Package]** [corrplot](https://cran.r-project.org/web/packages/corrplot/corrplot.pdf) by Taiyun Wei
+| **[R Package]** [tidyverse](https://cran.r-project.org/web/packages/tidyverse/tidyverse.pdf) by Hadley Wickham
+| **[R Package]** [lares](https://cran.rstudio.com/web/packages/lares/lares.pdf) by Bernardo Lares
+| **[R Package]** [DMwR](https://mran.microsoft.com/snapshot/2016-05-02/web/packages/DMwR/DMwR.pdf) by Luis Torgo
+| **[R Package]** [gridExtra](https://cran.r-project.org/web/packages/gridExtra/gridExtra.pdf) by Baptiste Auguie and Anton Antonov
+| **[R Package]** [rattle](https://cran.r-project.org/web/packages/rattle/rattle.pdf) by Graham Williams
+| **[R Package]** [rpart.plot](https://cran.r-project.org/web/packages/rpart.plot/rpart.plot.pdf) by Stephen Milborrow
+| **[R Package]** [RColorBrewer](https://cran.r-project.org/web//packages/RColorBrewer/RColorBrewer.pdf) by Erich Neuwirth
+| **[R Package]** [stats](https://search.r-project.org/R/refmans/stats/html/00Index.html) by R Core Team
+| **[R Package]** [pls](https://cran.r-project.org/web/packages/pls/pls.pdf) by Kristian Hovde Liland
+| **[R Package]** [nnet](https://cran.r-project.org/web/packages/nnet/nnet.pdf) by Brian Ripley
+| **[R Package]** [elasticnet](https://cran.r-project.org/web/packages/elasticnet/elasticnet.pdf) by Hui Zou
+| **[R Package]** [earth](https://cran.r-project.org/web/packages/earth/earth.pdf) by Stephen Milborrow
+| **[R Package]** [party](https://cran.r-project.org/web/packages/party/party.pdf) by Torsten Hothorn
+| **[R Package]** [kernlab](https://cran.r-project.org/web/packages/kernlab/kernlab.pdf) by Alexandros Karatzoglou
+| **[R Package]** [randomForest](https://cran.r-project.org/web/packages/randomForest/randomForest.pdf) by Andy Liaw
+| **[R Package]** [Cubist](https://cran.r-project.org/web/packages/Cubist/Cubist.pdf) by Max Kuhn
+| **[R Package]** [minerva](https://cran.r-project.org/web/packages/minerva/minerva.pdf) by Michele Filosi
+| **[R Package]** [CORElearn](https://cran.r-project.org/web/packages/CORElearn/CORElearn.pdf) by Marko Robnik-Sikonja and Petr Savicky
+| **[Article]** [The caret Package](https://topepo.github.io/caret/index.html) by Max Kuhn
+| **[Article]** [A Short Introduction to the caret Package](https://cran.r-project.org/web/packages/caret/vignettes/caret.html) by Max Kuhn
+| **[Article]** [Caret Package – A Practical Guide to Machine Learning in R](https://www.machinelearningplus.com/machine-learning/caret-package/#:~:text=Caret%20is%20short%20for%20Classification%20And%20REgression%20Training.,track%20of%20which%20algorithm%20resides%20in%20which%20package.) by Selva Prabhakaran
+| **[Article]** [Tuning Machine Learning Models Using the Caret R Package](https://machinelearningmastery.com/tuning-machine-learning-models-using-the-caret-r-package/) by Jason Brownlee
+| **[Article]** [Lattice Graphs](http://www.sthda.com/english/wiki/lattice-graphs) by STHDA Team
+| **[Article]** [A Tour of Machine Learning Algorithms](https://machinelearningmastery.com/a-tour-of-machine-learning-algorithms/) by Jason Brownlee
+| **[Article]** [Correlation in R: Pearson and Spearman Correlation Matrix](https://www.guru99.com/r-pearson-spearman-correlation.html) by Daniel Johnson
+| **[Article]** [Correlation (Pearson, Kendall, Spearman)](https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/correlation-pearson-kendall-spearman/) by Statistics Solutions Team
+| **[Article]** [A Comparison of the Pearson and Spearman Correlation Methods](https://support.minitab.com/en-us/minitab/21/help-and-how-to/statistics/basic-statistics/supporting-topics/correlation-and-covariance/a-comparison-of-the-pearson-and-spearman-correlation-methods/#:~:text=The%20Pearson%20and%20Spearman%20correlation%20coefficients%20can%20range,correlation%20coefficient%20is%20also%20%2B1%20in%20this%20case.) by Minitab Support Team
+| **[Article]** [How to Perform Lowess Smoothing in R (Step-by-Step)](https://www.statology.org/lowess-smoothing-r/) by Statology Team
+| **[Article]** [Maximal Information Coefficient](https://www.r-bloggers.com/2014/09/maximal-information-coefficient-part-ii/) by R Bloggers Team
+| **[Article]** [Visualization of Volcano Plots in R](https://sdgamboa.github.io/post/2020_volcano/) by Samuel David Gamboa-Tuz
+| **[Article]** [Using Volcano Plots in R to Visualize Microarray and RNA-seq Results](https://www.r-bloggers.com/2014/05/using-volcano-plots-in-r-to-visualize-microarray-and-rna-seq-results/) by Stephen Turner
+| **[Publication]** [Robust Locally Weighted Regression and Smoothing Scatterplots](https://www.tandfonline.com/doi/abs/10.1080/01621459.1979.10481038) by William Cleveland (Journal of the American Statistical Association)
+| **[Publication]** [Mathematical Contributions to the Theory of Evolution: Regression, Heredity and Panmixia](https://royalsocietypublishing.org/doi/10.1098/rsta.1896.0007) by Karl Pearson (Royal Society)
+| **[Publication]** [The Proof and Measurement of Association between Two Things](https://www.jstor.org/stable/1412159?origin=crossref) by Charles Spearman (The American Journal of Psychology)
+| **[Publication]** [Detecting Novel Associations in Large Data Sets](https://www.science.org/doi/10.1126/science.1205438) by David Reshef, Yakir Reshef, Hilary Finucane, Sharon Grossman, Gilean Mcvean, Peter Turnbaugh, Eric Lander, Michael Mitzenmacher and Pardis Sabeti (Science)
+| **[Publication]** [Theoretical and Empirical Analysis of ReliefF and RReliefF](https://link.springer.com/article/10.1023/A:1025667309714) by Marko Robnik-Šikonja and Igor Kononenko (Machine Learning)
+| **[Publication]** [First (?) Occurrence of Common Terms in Probability and Statistics-A Second List, with Corrections](https://www.jstor.org/stable/2685564?seq=1#page_scan_tab_contents) by H David (The American Statistician)
+| **[Course]** [Applied Data Mining and Statistical Learning](https://online.stat.psu.edu/stat508/) by Penn State Eberly College of Science
+| **[Course]** [Regression Methods](https://online.stat.psu.edu/stat501/) by Penn State Eberly College of Science
+| **[Course]** [Applied Regression Analysis](https://online.stat.psu.edu/stat462/) by Penn State Eberly College of Science
+|
+|
+|
+|
