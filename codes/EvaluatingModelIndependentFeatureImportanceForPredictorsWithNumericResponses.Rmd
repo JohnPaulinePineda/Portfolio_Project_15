@@ -1,6 +1,6 @@
 ---
 title: "Feature Selection : Evaluating Model-Independent Feature Importance for Predictors with Numeric Responses"
-author: "John Pauline Pineda"
+author: "<b><a href='https://github.com/JohnPaulinePineda'>John Pauline Pineda</a></b>"
 date: "December 14, 2022"
 output: 
   html_document:
@@ -55,7 +55,7 @@ library(pls)
 library(corrplot)
 library(tidyverse)
 library(lares)
-library(DMwR)
+library(DMwR2)
 library(gridExtra)
 library(rattle)
 library(rpart.plot)
@@ -1577,7 +1577,7 @@ grid.arrange(TTEST_P.Value_Plot,
 |
 # **2. Summary** <a name="summary"></a>
 |
-| ![](D:/Github_Codes/ProjectPortfolio/Portfolio_Project_15/docs/Project15_Summary.png)
+| ![](D:/Github_Codes/ProjectPortfolio/Portfolio_Project_15/images/Project15_Summary.png)
 |
 # **3. References**
 |
@@ -1598,7 +1598,7 @@ grid.arrange(TTEST_P.Value_Plot,
 | **[R Package]** [corrplot](https://cran.r-project.org/web/packages/corrplot/corrplot.pdf) by Taiyun Wei
 | **[R Package]** [tidyverse](https://cran.r-project.org/web/packages/tidyverse/tidyverse.pdf) by Hadley Wickham
 | **[R Package]** [lares](https://cran.rstudio.com/web/packages/lares/lares.pdf) by Bernardo Lares
-| **[R Package]** [DMwR](https://mran.microsoft.com/snapshot/2016-05-02/web/packages/DMwR/DMwR.pdf) by Luis Torgo
+| **[R Package]** [DMwR2](https://mran.microsoft.com/snapshot/2016-05-02/web/packages/DMwR/DMwR.pdf) by Luis Torgo
 | **[R Package]** [gridExtra](https://cran.r-project.org/web/packages/gridExtra/gridExtra.pdf) by Baptiste Auguie and Anton Antonov
 | **[R Package]** [rattle](https://cran.r-project.org/web/packages/rattle/rattle.pdf) by Graham Williams
 | **[R Package]** [rpart.plot](https://cran.r-project.org/web/packages/rpart.plot/rpart.plot.pdf) by Stephen Milborrow
